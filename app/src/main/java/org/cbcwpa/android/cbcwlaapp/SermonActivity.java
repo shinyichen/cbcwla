@@ -45,6 +45,10 @@ public class SermonActivity extends AppCompatActivity {
 
     public static final String Broadcast_PLAY_NEW_AUDIO = "org.cbcwla.android.PlayNewAudio";
 
+    public static final String Broadcast_PAUSE_AUDIO = "org.cbcwla.android.PauseAudio";
+
+    public static final String Broadcast_RESUME_AUDIO = "org.cbcwla.android.ResumeAudio";
+
     public SermonActivity() {
     }
 
@@ -156,10 +160,46 @@ public class SermonActivity extends AppCompatActivity {
         }
     }
 
+    private void pauseAudio() {
+        Intent broadcastIntent = new Intent(Broadcast_PAUSE_AUDIO);
+        sendBroadcast(broadcastIntent);
+    }
+
+    private void resumeAudio() {
+        Intent broadcastIntent = new Intent(Broadcast_RESUME_AUDIO);
+        sendBroadcast(broadcastIntent);
+    }
+
+    private SermonsAdapter.ViewHolder currentSermonHolder;
+
     SermonsAdapter.sermonViewListener clickListener = new SermonsAdapter.sermonViewListener() {
         @Override
-        public void onItemClicked(Sermon sermon) {
-            playAudio(sermon.getAudioPath());
+        public void onItemClicked(Sermon sermon, SermonsAdapter.ViewHolder holder) {
+            if (holder.isPlaying()) {// pause pressed
+                pauseAudio();
+                holder.setIsPlaying(false);
+            }
+            else { // play pressed
+
+                if (currentSermonHolder == null) {
+                    // no existing audio, start new sermon
+                    playAudio(sermon.getAudioPath());
+                    holder.setIsPlaying(true);
+                    currentSermonHolder = holder;
+                }
+                else if (currentSermonHolder != holder) { // play pressed with existing audio
+                    // pause existing audio
+                    currentSermonHolder.setIsPlaying(false);
+                    playAudio(sermon.getAudioPath());
+                    holder.setIsPlaying(true);
+                    currentSermonHolder = holder;
+                } else { // resume current sermon
+                    resumeAudio();
+                    holder.setIsPlaying(true);
+                }
+
+            }
+
         }
     };
 

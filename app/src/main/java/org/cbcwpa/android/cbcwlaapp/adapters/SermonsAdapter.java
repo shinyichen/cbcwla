@@ -17,18 +17,19 @@ import java.util.ArrayList;
 public class SermonsAdapter extends RecyclerView.Adapter<SermonsAdapter.ViewHolder> {
 
     public interface sermonViewListener {
-        void onItemClicked(Sermon sermon);
+        void onItemClicked(Sermon sermon ,ViewHolder holder);
     }
 
 
     // Provide a direct reference to each of the views within a data item
     // Used to cache the views within the item layout for fast access
-    static class ViewHolder extends RecyclerView.ViewHolder{
+    public static class ViewHolder extends RecyclerView.ViewHolder{
 
         ImageButton playButton;
         TextView titleView;
         TextView authorView;
         TextView dateView;
+        boolean isPlaying = false;
 
         // We also create a constructor that accepts the entire item row
         // and does the view lookups to find each subview
@@ -41,6 +42,19 @@ public class SermonsAdapter extends RecyclerView.Adapter<SermonsAdapter.ViewHold
             titleView = (TextView) itemView.findViewById(R.id.sermon_title);
             authorView = (TextView) itemView.findViewById(R.id.sermon_author);
             dateView = (TextView) itemView.findViewById(R.id.sermon_date);
+        }
+
+        public void setIsPlaying(boolean playing) {
+            isPlaying = playing;
+            if (playing) {
+                playButton.setImageResource(R.drawable.ic_pause_circle_outline_black_48dp);
+            } else {
+                playButton.setImageResource(R.drawable.ic_play_circle_outline_black_48dp);
+            }
+        }
+
+        public boolean isPlaying() {
+            return isPlaying;
         }
 
     }
@@ -72,7 +86,7 @@ public class SermonsAdapter extends RecyclerView.Adapter<SermonsAdapter.ViewHold
     }
 
     @Override
-    public void onBindViewHolder(ViewHolder holder, int position) {
+    public void onBindViewHolder(final ViewHolder holder, int position) {
         final Sermon sermon = sermons.get(position);
 
         TextView titleView = holder.titleView;
@@ -87,7 +101,7 @@ public class SermonsAdapter extends RecyclerView.Adapter<SermonsAdapter.ViewHold
 
             @Override
             public void onClick(View view) {
-                clickListener.onItemClicked(sermon);
+                clickListener.onItemClicked(sermon, holder);
             }
         });
     }

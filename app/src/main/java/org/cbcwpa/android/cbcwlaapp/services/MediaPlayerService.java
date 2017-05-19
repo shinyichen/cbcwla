@@ -20,7 +20,6 @@ import android.telephony.PhoneStateListener;
 import android.telephony.TelephonyManager;
 import android.util.Log;
 
-import org.cbcwpa.android.cbcwlaapp.R;
 import org.cbcwpa.android.cbcwlaapp.SermonActivity;
 
 import java.io.IOException;
@@ -73,7 +72,8 @@ public class MediaPlayerService extends Service implements
         registerBecomingNoisyReceiver();
 
         //Listen for new Audio to play -- BroadcastReceiver
-        registerPlayNewAudio();
+        registerAudioControlBroadcasts();
+
     }
 
     @Override
@@ -127,7 +127,7 @@ public class MediaPlayerService extends Service implements
 
         // unregister broadcast receivers
         unregisterReceiver(becomingNoisyReceiver);
-        unregisterReceiver(playNewAudio);
+        unregisterAudioControlBroadcasts();
     }
 
     /*************** headphone removed ******************/
@@ -360,11 +360,48 @@ public class MediaPlayerService extends Service implements
         }
     };
 
-    private void registerPlayNewAudio() {
+    private BroadcastReceiver pauseAudio = new BroadcastReceiver() {
+        @Override
+        public void onReceive(Context context, Intent intent) {
+            mediaFile = intent.getStringExtra("media");
+
+            pauseMedia();
+//            updateMetaData();
+            buildNotification(PlaybackStatus.PAUSED);
+        }
+    };
+
+    private BroadcastReceiver resumeAudio = new BroadcastReceiver() {
+        @Override
+        public void onReceive(Context context, Intent intent) {
+
+            resumeMedia();
+//            updateMetaData();
+            buildNotification(PlaybackStatus.PLAYING);
+        }
+    };
+
+    private void registerAudioControlBroadcasts() {
+
         // register to receive play new audio broadcast
         IntentFilter filter = new IntentFilter(SermonActivity.Broadcast_PLAY_NEW_AUDIO);
         registerReceiver(playNewAudio, filter);
+
+        // register to receive pause audio broadcast
+        filter = new IntentFilter(SermonActivity.Broadcast_PAUSE_AUDIO);
+        registerReceiver(pauseAudio, filter);
+
+        // register to receive start audio broadcast
+        filter = new IntentFilter(SermonActivity.Broadcast_RESUME_AUDIO);
+        registerReceiver(resumeAudio, filter);
     }
+
+    private void unregisterAudioControlBroadcasts() {
+        unregisterReceiver(becomingNoisyReceiver);
+        unregisterReceiver(playNewAudio);
+        unregisterReceiver(resumeAudio);
+    }
+
 
     /********************* media session (interaction with media controller) *******/
 
