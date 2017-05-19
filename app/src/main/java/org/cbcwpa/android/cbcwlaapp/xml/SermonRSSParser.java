@@ -7,7 +7,11 @@ import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 
 import java.net.URL;
+import java.text.DateFormat;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Date;
+import java.util.Locale;
 
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
@@ -42,7 +46,12 @@ public class SermonRSSParser extends AsyncTask<String, Integer, ArrayList<Sermon
                             sermon.setLink(child.getLastChild().getTextContent().trim());
                             break;
                         case "pubDate":
-                            sermon.setPubDate(child.getLastChild().getTextContent().trim());
+                            String str = child.getLastChild().getTextContent().trim();
+                            DateFormat inputFormat = new SimpleDateFormat("EEE, dd MMM yyyy HH:mm:ss Z", Locale.ENGLISH);
+                            DateFormat outputFormat = new SimpleDateFormat("EEE, dd MMM yyyy", Locale.ENGLISH);
+                            Date date = inputFormat.parse(str);
+                            String out = outputFormat.format(date);
+                            sermon.setPubDate(out);
                             break;
                         case "itunes:author":
                             sermon.setAuthor(child.getLastChild().getTextContent().trim());

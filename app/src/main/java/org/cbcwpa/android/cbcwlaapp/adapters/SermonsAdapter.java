@@ -20,16 +20,23 @@ public class SermonsAdapter extends RecyclerView.Adapter<SermonsAdapter.ViewHold
         void onItemClicked(Sermon sermon ,ViewHolder holder);
     }
 
+    public enum PlaybackStatus {
+        PLAYING,
+        STOPPED,
+        PAUSED
+    }
+
 
     // Provide a direct reference to each of the views within a data item
     // Used to cache the views within the item layout for fast access
     public static class ViewHolder extends RecyclerView.ViewHolder{
 
+        View container;
         ImageButton playButton;
         TextView titleView;
         TextView authorView;
         TextView dateView;
-        boolean isPlaying = false;
+        PlaybackStatus status = PlaybackStatus.STOPPED;
 
         // We also create a constructor that accepts the entire item row
         // and does the view lookups to find each subview
@@ -38,23 +45,29 @@ public class SermonsAdapter extends RecyclerView.Adapter<SermonsAdapter.ViewHold
             // to access the context from any ViewHolder instance.
             super(itemView);
 
+            container = itemView;
             playButton = (ImageButton) itemView.findViewById(R.id.sermon_play_button);
             titleView = (TextView) itemView.findViewById(R.id.sermon_title);
             authorView = (TextView) itemView.findViewById(R.id.sermon_author);
             dateView = (TextView) itemView.findViewById(R.id.sermon_date);
         }
 
-        public void setIsPlaying(boolean playing) {
-            isPlaying = playing;
-            if (playing) {
+        public void setPlayStatus(PlaybackStatus status) {
+            this.status = status;
+            if (status == PlaybackStatus.PLAYING) {
                 playButton.setImageResource(R.drawable.ic_pause_circle_outline_black_48dp);
-            } else {
+                container.setSelected(true);
+            } else if (status == PlaybackStatus.PAUSED) {
                 playButton.setImageResource(R.drawable.ic_play_circle_outline_black_48dp);
+                container.setSelected(true);
+            } else if (status == PlaybackStatus.STOPPED) {
+                playButton.setImageResource(R.drawable.ic_play_circle_outline_black_48dp);
+                container.setSelected(false);
             }
         }
 
         public boolean isPlaying() {
-            return isPlaying;
+            return status == PlaybackStatus.PLAYING;
         }
 
     }

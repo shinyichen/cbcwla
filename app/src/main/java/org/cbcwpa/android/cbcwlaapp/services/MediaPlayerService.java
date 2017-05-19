@@ -7,6 +7,8 @@ import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
 import android.media.AudioManager;
 import android.media.MediaPlayer;
 import android.media.session.MediaSessionManager;
@@ -20,6 +22,7 @@ import android.telephony.PhoneStateListener;
 import android.telephony.TelephonyManager;
 import android.util.Log;
 
+import org.cbcwpa.android.cbcwlaapp.R;
 import org.cbcwpa.android.cbcwlaapp.SermonActivity;
 
 import java.io.IOException;
@@ -37,6 +40,12 @@ public class MediaPlayerService extends Service implements
     private MediaPlayer mediaPlayer;
 
     private String mediaFile;
+
+    private String mediaTitle;
+
+    private String mediaAuthor;
+
+    private String mediaDate;
 
     private int resumePosition;
 
@@ -81,6 +90,9 @@ public class MediaPlayerService extends Service implements
         try {
             // An audio file is passed to the service through putExtra();
             mediaFile = intent.getExtras().getString("media");
+            mediaTitle = intent.getExtras().getString("title");
+            mediaAuthor = intent.getExtras().getString("author");
+            mediaDate = intent.getExtras().getString("date");
         } catch (NullPointerException e) {
             stopSelf();
         }
@@ -252,6 +264,21 @@ public class MediaPlayerService extends Service implements
 //        initMediaPlayer();
     }
 
+    private void rewind() {
+        if (mediaPlayer.isPlaying()) {
+            int pos = mediaPlayer.getCurrentPosition();
+            int newpos = ((pos - 5000)  > 0) ? pos-5000 : 0;
+            mediaPlayer.seekTo(newpos);
+        }
+    }
+
+    private void fastforward() {
+        int dur = mediaPlayer.getDuration();
+        int pos = mediaPlayer.getCurrentPosition();
+        int newpos = ((pos + 5000) < dur) ? pos+5000 : dur;
+        mediaPlayer.seekTo(newpos);
+    }
+
     /***************** MediaPlayer listeners *******************/
 
     @Override
@@ -350,6 +377,9 @@ public class MediaPlayerService extends Service implements
         @Override
         public void onReceive(Context context, Intent intent) {
             mediaFile = intent.getStringExtra("media");
+            mediaTitle = intent.getStringExtra("title");
+            mediaAuthor = intent.getStringExtra("author");
+            mediaDate = intent.getStringExtra("date");
 
             // reset media player and play new audio
             stopMedia();
@@ -363,7 +393,6 @@ public class MediaPlayerService extends Service implements
     private BroadcastReceiver pauseAudio = new BroadcastReceiver() {
         @Override
         public void onReceive(Context context, Intent intent) {
-            mediaFile = intent.getStringExtra("media");
 
             pauseMedia();
 //            updateMetaData();
@@ -410,6 +439,8 @@ public class MediaPlayerService extends Service implements
     public static final String ACTION_PREVIOUS = "org.cbcwla.android.ACTION_PREVIOUS";
     public static final String ACTION_NEXT = "org.cbcwla.android.ACTION_NEXT";
     public static final String ACTION_STOP = "org.cbcwla.android.ACTION_STOP";
+    public static final String ACTION_RW = "org.cbcwla.android.ACTION_RW";
+    public static final String ACTION_FF = "org.cbcwla.android.ACTION_FF";
 
     // MediaSession
     private MediaSessionManager mediaSessionManager;
@@ -472,6 +503,18 @@ public class MediaPlayerService extends Service implements
             }
 
             @Override
+            public void onFastForward() {
+                super.onFastForward();
+                fastforward();
+            }
+
+            @Override
+            public void onRewind() {
+                super.onRewind();
+                rewind();
+            }
+
+            @Override
             public void onStop() {
                 super.onStop();
                 removeNotification();
@@ -510,8 +553,8 @@ public class MediaPlayerService extends Service implements
             play_pauseAction = playbackAction(0);
         }
 
-//        Bitmap largeIcon = BitmapFactory.decodeResource(getResources(),
-//                R.drawable.image); //replace with your own image
+        Bitmap largeIcon = BitmapFactory.decodeResource(getResources(),
+                R.drawable.ic_sermon); //replace with your own image
 
         // Create a new Notification
         NotificationCompat.Builder notificationBuilder = (NotificationCompat.Builder) new NotificationCompat.Builder(this)
@@ -525,16 +568,18 @@ public class MediaPlayerService extends Service implements
                 // Set the Notification color
 //                .setColor(getResources().getColor(R.color.colorPrimary))
                 // Set the large and small icons
-//                .setLargeIcon(largeIcon)
+                .setLargeIcon(largeIcon)
                 .setSmallIcon(android.R.drawable.stat_sys_headset)
                 // Set Notification content information
-//                .setContentText(activeAudio.getArtist())
-//                .setContentTitle(activeAudio.getAlbum())
-//                .setContentInfo(activeAudio.getTitle())
+                .setContentText(mediaAuthor)
+                .setContentTitle(mediaTitle)
+                .setContentInfo(mediaDate)
                 // Add playback actions
-                .addAction(android.R.drawable.ic_media_previous, "previous", playbackAction(3))
+//                .addAction(android.R.drawable.ic_media_previous, "previous", playbackAction(3))
+                .addAction(android.R.drawable.ic_media_rew, "rewind", playbackAction(4))
                 .addAction(notificationAction, "pause", play_pauseAction)
-                .addAction(android.R.drawable.ic_media_next, "next", playbackAction(2));
+                .addAction(android.R.drawable.ic_media_ff, "fast forward", playbackAction(5));
+//                .addAction(android.R.drawable.ic_media_next, "next", playbackAction(2));
 
         ((NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE)).notify(NOTIFICATION_ID, notificationBuilder.build());
     }
@@ -563,6 +608,12 @@ public class MediaPlayerService extends Service implements
                 // Previous track
                 playbackAction.setAction(ACTION_PREVIOUS);
                 return PendingIntent.getService(this, actionNumber, playbackAction, 0);
+            case 4:
+                playbackAction.setAction(ACTION_RW);
+                return PendingIntent.getService(this, actionNumber, playbackAction, 0);
+            case 5:
+                playbackAction.setAction(ACTION_FF);
+                return PendingIntent.getService(this, actionNumber, playbackAction, 0);
             default:
                 break;
         }
@@ -583,6 +634,10 @@ public class MediaPlayerService extends Service implements
             transportControls.skipToPrevious();
         } else if (actionString.equalsIgnoreCase(ACTION_STOP)) {
             transportControls.stop();
+        } else if (actionString.equalsIgnoreCase(ACTION_RW)) {
+            transportControls.rewind();
+        } else if (actionString.equalsIgnoreCase(ACTION_FF)) {
+            transportControls.fastForward();
         }
     }
 
