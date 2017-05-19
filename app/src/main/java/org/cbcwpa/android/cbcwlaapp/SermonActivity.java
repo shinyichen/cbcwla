@@ -27,7 +27,7 @@ import org.cbcwpa.android.cbcwlaapp.xml.Sermon;
 
 import java.util.ArrayList;
 
-public class SermonActivity extends AppCompatActivity {
+public class SermonActivity extends AppCompatActivity implements MediaPlayerService.MediaListener{
 
     private static final String TAG = "SermonActivity";
 
@@ -136,8 +136,9 @@ public class SermonActivity extends AppCompatActivity {
             MediaPlayerService.LocalBinder binder = (MediaPlayerService.LocalBinder) iBinder;
             mediaPlayer = binder.getService();
             serviceBound = true;
+            mediaPlayer.registerClient(SermonActivity.this);
 
-            Toast.makeText(SermonActivity.this, "Service bound", Toast.LENGTH_SHORT).show();
+//            Toast.makeText(SermonActivity.this, "Service bound", Toast.LENGTH_SHORT).show();
         }
 
         @Override
@@ -203,4 +204,13 @@ public class SermonActivity extends AppCompatActivity {
         }
     };
 
+    @Override
+    public void paused() {
+        currentSermonHolder.setIsPlaying(false);
+    }
+
+    @Override
+    public void playing() {
+        currentSermonHolder.setIsPlaying(true);
+    }
 }

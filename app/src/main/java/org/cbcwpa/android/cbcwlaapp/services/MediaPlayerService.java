@@ -444,6 +444,7 @@ public class MediaPlayerService extends Service implements
                 super.onPlay();
                 resumeMedia();
                 buildNotification(PlaybackStatus.PLAYING);
+                client.playing();
             }
 
             @Override
@@ -451,6 +452,7 @@ public class MediaPlayerService extends Service implements
                 super.onPause();
                 pauseMedia();
                 buildNotification(PlaybackStatus.PAUSED);
+                client.paused();
             }
 
             @Override
@@ -475,6 +477,7 @@ public class MediaPlayerService extends Service implements
                 removeNotification();
                 //Stop the service
                 stopSelf();
+                client.paused();
             }
 
             @Override
@@ -581,5 +584,18 @@ public class MediaPlayerService extends Service implements
         } else if (actionString.equalsIgnoreCase(ACTION_STOP)) {
             transportControls.stop();
         }
+    }
+
+    /****************** communicate with activity through callback **********/
+
+    private MediaListener client;
+
+    public void registerClient(MediaListener activity) {
+        client = activity;
+    }
+
+    public interface MediaListener {
+        public void paused();
+        public void playing();
     }
 }
