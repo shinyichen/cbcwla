@@ -325,6 +325,8 @@ public class MediaPlayerService extends Service implements
 
     /****************** audio focus **********************/
 
+    private PlaybackStatus playbackStatusBeforeFocusLoss;
+
     @Override
     public void onAudioFocusChange(int i) {
 
@@ -332,12 +334,20 @@ public class MediaPlayerService extends Service implements
             case AudioManager.AUDIOFOCUS_GAIN:
                 // resume playback
                 if (mediaPlayer == null) initMediaPlayer();
-                else if (!mediaPlayer.isPlaying()) mediaPlayer.start();
+                if (!mediaPlayer.isPlaying() && playbackStatusBeforeFocusLoss == PlaybackStatus.PLAYING)
+                    mediaPlayer.start();
+                else if (mediaPlayer.isPlaying() && playbackStatusBeforeFocusLoss == PlaybackStatus.PAUSED)
+                    mediaPlayer.pause();
                 mediaPlayer.setVolume(1.0f, 1.0f);
                 break;
             case AudioManager.AUDIOFOCUS_LOSS:
                 // Lost focus for an unbounded amount of time: stop playback and release media player
-                if (mediaPlayer.isPlaying()) mediaPlayer.stop();
+                if (mediaPlayer.isPlaying()){
+                    mediaPlayer.stop();
+                    playbackStatusBeforeFocusLoss = PlaybackStatus.PLAYING;
+                } else {
+                    playbackStatusBeforeFocusLoss = PlaybackStatus.PAUSED;
+                }
                 mediaPlayer.release();
                 mediaPlayer = null;
                 break;
@@ -345,12 +355,22 @@ public class MediaPlayerService extends Service implements
                 // Lost focus for a short time, but we have to stop
                 // playback. We don't release the media player because playback
                 // is likely to resume
-                if (mediaPlayer.isPlaying()) mediaPlayer.pause();
+                if (mediaPlayer.isPlaying()) {
+                    mediaPlayer.pause();
+                    playbackStatusBeforeFocusLoss = PlaybackStatus.PAUSED;
+                } else {
+                    playbackStatusBeforeFocusLoss = PlaybackStatus.PLAYING;
+                }
                 break;
             case AudioManager.AUDIOFOCUS_LOSS_TRANSIENT_CAN_DUCK:
                 // Lost focus for a short time, but it's ok to keep playing
                 // at an attenuated level
-                if (mediaPlayer.isPlaying()) mediaPlayer.setVolume(0.1f, 0.1f);
+                if (mediaPlayer.isPlaying()) {
+                    mediaPlayer.setVolume(0.1f, 0.1f);
+                    playbackStatusBeforeFocusLoss = PlaybackStatus.PLAYING;
+                } else {
+                    playbackStatusBeforeFocusLoss = PlaybackStatus.PAUSED;
+                }
                 break;
         }
     }
