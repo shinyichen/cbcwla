@@ -6,7 +6,7 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:fitsSystemWindows="true"
-    tools:context="org.cbcwpa.android.cbcwlaapp.SermonActivity">
+    tools:context="org.cbcwpa.android.cbcwlaapp.activities.SermonActivity">
 
     <android.support.design.widget.AppBarLayout
         android:id="@+id/appbar"

@@ -1,4 +1,4 @@
-package org.cbcwpa.android.cbcwlaapp;
+package org.cbcwpa.android.cbcwlaapp.activities;
 
 import android.content.ComponentName;
 import android.content.Context;
@@ -15,6 +15,7 @@ import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
 
+import org.cbcwpa.android.cbcwlaapp.R;
 import org.cbcwpa.android.cbcwlaapp.adapters.SermonsAdapter;
 import org.cbcwpa.android.cbcwlaapp.services.MediaPlayerService;
 import org.cbcwpa.android.cbcwlaapp.xml.SermonRSSParser;
@@ -104,7 +105,7 @@ public class SermonActivity extends AppCompatActivity implements MediaPlayerServ
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
         // Inflate the menu; this adds items to the action bar if it is present.
-        getMenuInflater().inflate(R.menu.menu_sermon, menu);
+//        getMenuInflater().inflate(R.menu.menu_sermon, menu);
         return true;
     }
 

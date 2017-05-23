@@ -23,7 +23,7 @@ import android.telephony.TelephonyManager;
 import android.util.Log;
 
 import org.cbcwpa.android.cbcwlaapp.R;
-import org.cbcwpa.android.cbcwlaapp.SermonActivity;
+import org.cbcwpa.android.cbcwlaapp.activities.SermonActivity;
 
 import java.io.IOException;
 

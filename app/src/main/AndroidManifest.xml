@@ -16,7 +16,7 @@
         android:supportsRtl="true"
         android:theme="@style/AppTheme">
         <activity
-            android:name=".SermonActivity"
+            android:name=".activities.SermonActivity"
             android:label="@string/sermon_activity"
             android:launchMode="singleTop"
             android:theme="@style/AppTheme.NoActionBar">
