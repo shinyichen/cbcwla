@@ -18,6 +18,7 @@
         <activity
             android:name=".SermonActivity"
             android:label="@string/sermon_activity"
+            android:launchMode="singleTop"
             android:theme="@style/AppTheme.NoActionBar">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />

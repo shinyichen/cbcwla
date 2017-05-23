@@ -426,7 +426,6 @@ public class MediaPlayerService extends Service implements
     }
 
     private void unregisterAudioControlBroadcasts() {
-        unregisterReceiver(becomingNoisyReceiver);
         unregisterReceiver(playNewAudio);
         unregisterReceiver(resumeAudio);
     }
@@ -553,12 +552,17 @@ public class MediaPlayerService extends Service implements
             play_pauseAction = playbackAction(0);
         }
 
+        Intent homeIntent = new Intent(this, SermonActivity.class);
+        PendingIntent pendingIntent = PendingIntent.getActivity(this, 0,
+                homeIntent, PendingIntent.FLAG_UPDATE_CURRENT);
+
         Bitmap largeIcon = BitmapFactory.decodeResource(getResources(),
                 R.drawable.ic_sermon); //replace with your own image
 
         // Create a new Notification
         NotificationCompat.Builder notificationBuilder = (NotificationCompat.Builder) new NotificationCompat.Builder(this)
                 .setShowWhen(false)
+                .setContentIntent(pendingIntent)
                 // Set the Notification style
                 .setStyle(new NotificationCompat.MediaStyle()
                         // Attach our MediaSession token
