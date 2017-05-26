@@ -44,6 +44,8 @@ public class SermonActivity extends AppCompatActivity implements MediaPlayerServ
 
     private int currentSermonId = -1;
 
+    private Sermon playOnServiceConnect;
+
     public static final String Broadcast_PLAY_NEW_AUDIO = "org.cbcwla.android.PlayNewAudio";
 
     public static final String Broadcast_PAUSE_AUDIO = "org.cbcwla.android.PauseAudio";
@@ -199,6 +201,13 @@ public class SermonActivity extends AppCompatActivity implements MediaPlayerServ
             }
             currentSermonId = id;
 
+            if (playOnServiceConnect != null) {
+                Intent broadcastIntent = new Intent(Broadcast_PLAY_NEW_AUDIO);
+                broadcastIntent.putExtra("sermon", playOnServiceConnect);
+                sendBroadcast(broadcastIntent);
+                playOnServiceConnect = null;
+            }
+
 //            Toast.makeText(SermonActivity.this, "Service bound", Toast.LENGTH_SHORT).show();
         }
 
@@ -215,13 +224,16 @@ public class SermonActivity extends AppCompatActivity implements MediaPlayerServ
         // (there was no audio playing)
         // so now we need to start the service
         if (!serviceBound) {
+            playOnServiceConnect = sermon;
             Intent playerIntent = new Intent(this, MediaPlayerService.class);
             startService(playerIntent);
             bindService(playerIntent, serviceConnection, Context.BIND_AUTO_CREATE);
         }
-        Intent broadcastIntent = new Intent(Broadcast_PLAY_NEW_AUDIO);
-        broadcastIntent.putExtra("sermon", sermon);
-        sendBroadcast(broadcastIntent);
+        else {
+            Intent broadcastIntent = new Intent(Broadcast_PLAY_NEW_AUDIO);
+            broadcastIntent.putExtra("sermon", sermon);
+            sendBroadcast(broadcastIntent);
+        }
     }
 
     private void pauseAudio() {
