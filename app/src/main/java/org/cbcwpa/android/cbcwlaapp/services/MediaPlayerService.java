@@ -24,6 +24,8 @@ import android.util.Log;
 
 import org.cbcwpa.android.cbcwlaapp.R;
 import org.cbcwpa.android.cbcwlaapp.activities.SermonActivity;
+import org.cbcwpa.android.cbcwlaapp.utils.PlaybackStatus;
+import org.cbcwpa.android.cbcwlaapp.xml.Sermon;
 
 import java.io.IOException;
 
@@ -37,19 +39,17 @@ public class MediaPlayerService extends Service implements
         AudioManager.OnAudioFocusChangeListener {
 
 
+    private static final String TAG = "MediaPlayerService";
+
     private MediaPlayer mediaPlayer;
 
-    private String mediaFile;
-
-    private String mediaTitle;
-
-    private String mediaAuthor;
-
-    private String mediaDate;
+    private Sermon sermon;
 
     private int resumePosition;
 
     private AudioManager audioManager;
+
+    private boolean serviceStarted = false;
 
 
     /****************** service ***********************/
@@ -83,19 +83,11 @@ public class MediaPlayerService extends Service implements
         //Listen for new Audio to play -- BroadcastReceiver
         registerAudioControlBroadcasts();
 
+        serviceStarted = true;
     }
 
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
-        try {
-            // An audio file is passed to the service through putExtra();
-            mediaFile = intent.getExtras().getString("media");
-            mediaTitle = intent.getExtras().getString("title");
-            mediaAuthor = intent.getExtras().getString("author");
-            mediaDate = intent.getExtras().getString("date");
-        } catch (NullPointerException e) {
-            stopSelf();
-        }
 
         // Request audio focus
         if (!requestAudioFocus()) {
@@ -106,12 +98,10 @@ public class MediaPlayerService extends Service implements
         if (mediaSessionManager == null) {
             try {
                 initMediaSession();
-                initMediaPlayer();
             } catch (RemoteException e) {
                 e.printStackTrace();
                 stopSelf();
             }
-            buildNotification(PlaybackStatus.PLAYING);
         }
 
         //Handle Intent action from MediaSession.TransportControls
@@ -137,9 +127,14 @@ public class MediaPlayerService extends Service implements
 
         removeNotification();
 
+        Log.i(TAG, "MediaPlayerService destroyed");
+
         // unregister broadcast receivers
         unregisterReceiver(becomingNoisyReceiver);
         unregisterAudioControlBroadcasts();
+
+        serviceStarted = false;
+
     }
 
     /*************** headphone removed ******************/
@@ -199,21 +194,27 @@ public class MediaPlayerService extends Service implements
     /***************** player control *******************/
 
     private void initMediaPlayer() {
-        mediaPlayer = new MediaPlayer();
-        //Set up MediaPlayer event listeners
-        mediaPlayer.setOnCompletionListener(this);
-        mediaPlayer.setOnErrorListener(this);
-        mediaPlayer.setOnPreparedListener(this);
-        mediaPlayer.setOnBufferingUpdateListener(this);
-        mediaPlayer.setOnSeekCompleteListener(this);
-        mediaPlayer.setOnInfoListener(this);
-        //Reset so that the MediaPlayer is not pointing to another data source
+        Log.i(TAG, "init media player");
+
+        if (mediaPlayer == null) {
+            mediaPlayer = new MediaPlayer();
+
+            //Set up MediaPlayer event listeners
+            mediaPlayer.setOnCompletionListener(this);
+            mediaPlayer.setOnErrorListener(this);
+            mediaPlayer.setOnPreparedListener(this);
+            mediaPlayer.setOnBufferingUpdateListener(this);
+            mediaPlayer.setOnSeekCompleteListener(this);
+            mediaPlayer.setOnInfoListener(this);
+        }
+
+        // Reset so that the MediaPlayer is not pointing to another data source
         mediaPlayer.reset();
 
         mediaPlayer.setAudioStreamType(AudioManager.STREAM_MUSIC);
         try {
             // Set the data source to the mediaFile location
-            mediaPlayer.setDataSource(mediaFile);
+            mediaPlayer.setDataSource(sermon.getAudioPath());
         } catch (IOException e) {
             e.printStackTrace();
             stopSelf();
@@ -225,6 +226,8 @@ public class MediaPlayerService extends Service implements
         if (!mediaPlayer.isPlaying()) {
             mediaPlayer.start();
         }
+        if (client != null)
+            client.playing(sermon.getId());
     }
 
     private void stopMedia() {
@@ -232,6 +235,8 @@ public class MediaPlayerService extends Service implements
         if (mediaPlayer.isPlaying()) {
             mediaPlayer.stop();
         }
+        if (client != null)
+            client.stopped();
     }
 
     private void pauseMedia() {
@@ -239,6 +244,8 @@ public class MediaPlayerService extends Service implements
             mediaPlayer.pause();
             resumePosition = mediaPlayer.getCurrentPosition();
         }
+        if (client != null)
+            client.paused();
     }
 
     private void resumeMedia() {
@@ -246,6 +253,8 @@ public class MediaPlayerService extends Service implements
             mediaPlayer.seekTo(resumePosition);
             mediaPlayer.start();
         }
+        if (client != null)
+            client.playing(sermon.getId());
     }
 
     private void skipToNext() {
@@ -290,6 +299,7 @@ public class MediaPlayerService extends Service implements
     public void onCompletion(MediaPlayer mediaPlayer) {
         stopMedia();
         stopSelf();
+        // TODO how to restart service when play is clicked
     }
 
     @Override
@@ -396,16 +406,16 @@ public class MediaPlayerService extends Service implements
     private BroadcastReceiver playNewAudio = new BroadcastReceiver() {
         @Override
         public void onReceive(Context context, Intent intent) {
-            mediaFile = intent.getStringExtra("media");
-            mediaTitle = intent.getStringExtra("title");
-            mediaAuthor = intent.getStringExtra("author");
-            mediaDate = intent.getStringExtra("date");
 
             // reset media player and play new audio
-            stopMedia();
-            mediaPlayer.reset();
+            if (mediaPlayer != null) {
+                stopMedia();
+                mediaPlayer.reset();
+            }
+
+            sermon = (Sermon) intent.getSerializableExtra("sermon");
+
             initMediaPlayer();
-//            updateMetaData();
             buildNotification(PlaybackStatus.PLAYING);
         }
     };
@@ -415,7 +425,6 @@ public class MediaPlayerService extends Service implements
         public void onReceive(Context context, Intent intent) {
 
             pauseMedia();
-//            updateMetaData();
             buildNotification(PlaybackStatus.PAUSED);
         }
     };
@@ -425,7 +434,6 @@ public class MediaPlayerService extends Service implements
         public void onReceive(Context context, Intent intent) {
 
             resumeMedia();
-//            updateMetaData();
             buildNotification(PlaybackStatus.PLAYING);
         }
     };
@@ -448,6 +456,7 @@ public class MediaPlayerService extends Service implements
     private void unregisterAudioControlBroadcasts() {
         unregisterReceiver(playNewAudio);
         unregisterReceiver(resumeAudio);
+        unregisterReceiver(pauseAudio);
     }
 
 
@@ -483,9 +492,6 @@ public class MediaPlayerService extends Service implements
         // through its MediaSessionCompat.Callback.
         mediaSession.setFlags(MediaSessionCompat.FLAG_HANDLES_TRANSPORT_CONTROLS);
 
-        //Set mediaSession's MetaData
-//        updateMetaData();
-
         // Attach Callback to receive MediaSession updates
         mediaSession.setCallback(new MediaSessionCompat.Callback() {
             // Implement callbacks
@@ -494,7 +500,8 @@ public class MediaPlayerService extends Service implements
                 super.onPlay();
                 resumeMedia();
                 buildNotification(PlaybackStatus.PLAYING);
-                client.playing();
+//                if (client != null)
+//                    client.playing();
             }
 
             @Override
@@ -502,14 +509,14 @@ public class MediaPlayerService extends Service implements
                 super.onPause();
                 pauseMedia();
                 buildNotification(PlaybackStatus.PAUSED);
-                client.paused();
+//                if (client != null)
+//                    client.paused();
             }
 
             @Override
             public void onSkipToNext() {
                 super.onSkipToNext();
                 skipToNext();
-//                updateMetaData();
                 buildNotification(PlaybackStatus.PLAYING);
             }
 
@@ -517,7 +524,6 @@ public class MediaPlayerService extends Service implements
             public void onSkipToPrevious() {
                 super.onSkipToPrevious();
                 skipToPrevious();
-//                updateMetaData();
                 buildNotification(PlaybackStatus.PLAYING);
             }
 
@@ -539,7 +545,8 @@ public class MediaPlayerService extends Service implements
                 removeNotification();
                 //Stop the service
                 stopSelf();
-                client.paused();
+//                if (client != null)
+//                    client.paused();
             }
 
             @Override
@@ -551,10 +558,6 @@ public class MediaPlayerService extends Service implements
 
     /************** notification ****************/
 
-    private enum PlaybackStatus {
-        PLAYING,
-        PAUSED
-    }
 
     private void buildNotification(PlaybackStatus playbackStatus) {
 
@@ -583,21 +586,17 @@ public class MediaPlayerService extends Service implements
         NotificationCompat.Builder notificationBuilder = (NotificationCompat.Builder) new NotificationCompat.Builder(this)
                 .setShowWhen(false)
                 .setContentIntent(pendingIntent)
-                // Set the Notification style
                 .setStyle(new NotificationCompat.MediaStyle()
-                        // Attach our MediaSession token
-                        .setMediaSession(mediaSession.getSessionToken())
-                        // Show our playback controls in the compact notification view.
-                        .setShowActionsInCompactView(0, 1, 2))
-                // Set the Notification color
-//                .setColor(getResources().getColor(R.color.colorPrimary))
-                // Set the large and small icons
+                .setMediaSession(mediaSession.getSessionToken())
+                // Show our playback controls in the compact notification view.
+                .setShowActionsInCompactView(0, 1, 2))
+//               .setColor(getResources().getColor(R.color.colorPrimary))
                 .setLargeIcon(largeIcon)
                 .setSmallIcon(android.R.drawable.stat_sys_headset)
                 // Set Notification content information
-                .setContentText(mediaAuthor)
-                .setContentTitle(mediaTitle)
-                .setContentInfo(mediaDate)
+                .setContentText(sermon.getAuthor())
+                .setContentTitle(sermon.getTitle())
+                .setContentInfo(sermon.getPubDate())
                 // Add playback actions
 //                .addAction(android.R.drawable.ic_media_previous, "previous", playbackAction(3))
                 .addAction(android.R.drawable.ic_media_rew, "rewind", playbackAction(4))
@@ -667,14 +666,39 @@ public class MediaPlayerService extends Service implements
 
     /****************** communicate with activity through callback **********/
 
+    public boolean isServiceRunning() {
+        return serviceStarted;
+    }
+
     private MediaListener client;
 
     public void registerClient(MediaListener activity) {
         client = activity;
     }
 
+    public void unregisterClient() {
+        client = null;
+    }
+
     public interface MediaListener {
+        public void stopped();
         public void paused();
-        public void playing();
+        public void playing(int sermonId);
+    }
+
+    public int getCurrentSermonId() {
+        if (sermon != null)
+            return sermon.getId();
+        else
+            return -1;
+    }
+
+    public PlaybackStatus getStatus() {
+        if (mediaPlayer.isPlaying())
+            return PlaybackStatus.PLAYING;
+        else if (sermon != null)
+            return PlaybackStatus.PAUSED;
+        else
+            return PlaybackStatus.STOPPED;
     }
 }

@@ -35,6 +35,7 @@ public class SermonRSSParser extends AsyncTask<String, Integer, ArrayList<Sermon
             for (int i = 0; i < items.getLength(); i++) {
                 Node item = items.item(i);
                 Sermon sermon = new Sermon();
+                sermon.setId(i);
                 NodeList children = item.getChildNodes();
                 for (int c = 0; c < children.getLength(); c++) {
                     Node child = children.item(c);

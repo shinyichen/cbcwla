@@ -9,6 +9,7 @@ import android.widget.ImageButton;
 import android.widget.TextView;
 
 import org.cbcwpa.android.cbcwlaapp.R;
+import org.cbcwpa.android.cbcwlaapp.utils.PlaybackStatus;
 import org.cbcwpa.android.cbcwlaapp.xml.Sermon;
 
 import java.util.ArrayList;
@@ -18,12 +19,6 @@ public class SermonsAdapter extends RecyclerView.Adapter<SermonsAdapter.ViewHold
 
     public interface sermonViewListener {
         void onItemClicked(Sermon sermon ,ViewHolder holder);
-    }
-
-    public enum PlaybackStatus {
-        PLAYING,
-        STOPPED,
-        PAUSED
     }
 
 
@@ -102,6 +97,7 @@ public class SermonsAdapter extends RecyclerView.Adapter<SermonsAdapter.ViewHold
     public void onBindViewHolder(final ViewHolder holder, int position) {
         final Sermon sermon = sermons.get(position);
 
+        View container = holder.container;
         TextView titleView = holder.titleView;
         titleView.setText(sermon.getTitle());
         TextView authorView = holder.authorView;
@@ -117,10 +113,25 @@ public class SermonsAdapter extends RecyclerView.Adapter<SermonsAdapter.ViewHold
                 clickListener.onItemClicked(sermon, holder);
             }
         });
+
+        PlaybackStatus status = sermon.getStatus();
+        if (status == PlaybackStatus.PLAYING) {
+            playButton.setImageResource(R.drawable.ic_pause_circle_outline_black_48dp);
+            container.setSelected(true);
+        } else if (status == PlaybackStatus.PAUSED) {
+            playButton.setImageResource(R.drawable.ic_play_circle_outline_black_48dp);
+            container.setSelected(true);
+        } else if (status == PlaybackStatus.STOPPED) {
+            playButton.setImageResource(R.drawable.ic_play_circle_outline_black_48dp);
+            container.setSelected(false);
+        }
     }
+
+
 
     @Override
     public int getItemCount() {
         return sermons.size();
     }
+
 }

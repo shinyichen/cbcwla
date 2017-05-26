@@ -1,5 +1,11 @@
 <resources>
     <string name="app_name">CBCWLA</string>
     <string name="action_settings">Settings</string>
-    <string name="sermon_activity">CBCWLA Sermons</string>
+    <string name="home_activity">CBCWLA</string>
+    <string name="sermon_activity">Sermons</string>
+    <string name="life_activity">Life is a Song</string>
+
+
+    <string name="navigation_drawer_open">Open navigation drawer</string>
+    <string name="navigation_drawer_close">Close navigation drawer</string>
 </resources>

@@ -5,6 +5,8 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.ServiceConnection;
 import android.os.IBinder;
+import android.support.annotation.NonNull;
+import android.support.v4.app.NavUtils;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
@@ -18,6 +20,7 @@ import android.view.MenuItem;
 import org.cbcwpa.android.cbcwlaapp.R;
 import org.cbcwpa.android.cbcwlaapp.adapters.SermonsAdapter;
 import org.cbcwpa.android.cbcwlaapp.services.MediaPlayerService;
+import org.cbcwpa.android.cbcwlaapp.utils.PlaybackStatus;
 import org.cbcwpa.android.cbcwlaapp.xml.SermonRSSParser;
 import org.cbcwpa.android.cbcwlaapp.xml.Sermon;
 
@@ -35,9 +38,11 @@ public class SermonActivity extends AppCompatActivity implements MediaPlayerServ
 
     SermonsAdapter sermonsAdapter;
 
-    private MediaPlayerService mediaPlayer;
+    private MediaPlayerService mediaPlayerService;
 
     private boolean serviceBound = false;
+
+    private int currentSermonId = -1;
 
     public static final String Broadcast_PLAY_NEW_AUDIO = "org.cbcwla.android.PlayNewAudio";
 
@@ -59,46 +64,90 @@ public class SermonActivity extends AppCompatActivity implements MediaPlayerServ
             Log.e(TAG, "Error reading RSS feed");
         }
 
-        Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
-        setSupportActionBar(toolbar);
+        try {
+            Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
+            setSupportActionBar(toolbar);
+            getSupportActionBar().setDisplayHomeAsUpEnabled(true);
+        } catch (Exception e) {
+            Log.e(TAG, e.getMessage());
+        }
 
         // main list view
         sermonsListView = (RecyclerView) findViewById(R.id.sermon_activity_list);
         sermonsAdapter = new SermonsAdapter(this, sermons, clickListener);
-        sermonsListView.setAdapter(sermonsAdapter);
         sermonsListView.setLayoutManager(new LinearLayoutManager(this));
+        sermonsListView.setAdapter(sermonsAdapter);
 
-//        FloatingActionButton fab = (FloatingActionButton) findViewById(R.id.fab);
-//        fab.setOnClickListener(new View.OnClickListener() {
-//            @Override
-//            public void onClick(View view) {
-//                Snackbar.make(view, "Replace with your own action", Snackbar.LENGTH_LONG)
-//                        .setAction("Action", null).show();
-//            }
-//        });
+        Log.i(TAG, "SermonActivity created");
 
     }
 
     @Override
+    protected void onStart() {
+        super.onStart();
+
+        // bind to media player service
+        Intent intent = new Intent(this, MediaPlayerService.class);
+//        startService(intent);
+        bindService(intent, serviceConnection, Context.BIND_AUTO_CREATE);
+    }
+
+    @Override
     public void onSaveInstanceState(Bundle savedInstanceState) {
-        savedInstanceState.putBoolean("ServiceState", serviceBound);
+//        savedInstanceState.putBoolean("ServiceState", serviceBound);
+        savedInstanceState.putInt("CurrentSermonId", currentSermonId);
+        // TODO save sermons
         super.onSaveInstanceState(savedInstanceState);
     }
 
     @Override
     public void onRestoreInstanceState(Bundle savedInstanceState) {
         super.onRestoreInstanceState(savedInstanceState);
-        serviceBound = savedInstanceState.getBoolean("ServiceState");
+//        serviceBound = savedInstanceState.getBoolean("ServiceState");
+        currentSermonId = savedInstanceState.getInt("CurrentSermonId", -1);
+        // TODO get sermons
+    }
+
+    @Override
+    public void onBackPressed() {
+        // up goes to parent (MainActivity)
+        // back by default goes to previous activity on stack
+//        onSupportNavigateUp();
+        navigateUp();
+    }
+
+
+    @Override
+    public boolean supportShouldUpRecreateTask(@NonNull Intent targetIntent) {
+        // if user click on notification and parent activity is gone
+        // this will recreate parent activity when navigate up
+        return true;
+    }
+
+    @Override
+    public boolean onSupportNavigateUp() {
+        navigateUp();
+        return true;
+    }
+
+    private void navigateUp() {
+        // go up to the parent activity without recreating the parent
+        Intent h = NavUtils.getParentActivityIntent(this);
+        h.setFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_SINGLE_TOP);
+        NavUtils.navigateUpTo(this, h);
     }
 
     @Override
     protected void onDestroy() {
         super.onDestroy();
+
+        // unbind from media player service
         if (serviceBound) {
+            mediaPlayerService.unregisterClient();
             unbindService(serviceConnection);
-            //service is active
-            mediaPlayer.stopSelf();
         }
+
+        Log.i(TAG, "destroyed");
     }
 
 
@@ -119,6 +168,9 @@ public class SermonActivity extends AppCompatActivity implements MediaPlayerServ
         //noinspection SimplifiableIfStatement
         if (id == R.id.action_settings) {
             return true;
+        } else if (id == android.R.id.home) { // up button
+//            NavUtils.navigateUpFromSameTask(this);
+            navigateUp();
         }
 
         return super.onOptionsItemSelected(item);
@@ -130,41 +182,33 @@ public class SermonActivity extends AppCompatActivity implements MediaPlayerServ
         @Override
         public void onServiceConnected(ComponentName componentName, IBinder iBinder) {
             MediaPlayerService.LocalBinder binder = (MediaPlayerService.LocalBinder) iBinder;
-            mediaPlayer = binder.getService();
+            mediaPlayerService = binder.getService();
             serviceBound = true;
-            mediaPlayer.registerClient(SermonActivity.this);
+            mediaPlayerService.registerClient(SermonActivity.this);
+
+            // if service already existed, get current play status
+            int id = mediaPlayerService.getCurrentSermonId();
+            for (Sermon s : sermons) {
+                if (s.getId() == id) {
+                    s.setStatus(mediaPlayerService.getStatus());
+                }
+            }
+            currentSermonId = id;
 
 //            Toast.makeText(SermonActivity.this, "Service bound", Toast.LENGTH_SHORT).show();
         }
 
         @Override
         public void onServiceDisconnected(ComponentName componentName) {
+            mediaPlayerService.unregisterClient();
             serviceBound = false;
         }
     };
 
     private void playAudio(Sermon sermon) {
-        String path = sermon.getAudioPath();
-        String title = sermon.getTitle();
-        String author = sermon.getAuthor();
-        String date = sermon.getPubDate();
-        if (!serviceBound) { // first time
-            Intent intent = new Intent(this, MediaPlayerService.class);
-            intent.putExtra("media", path);
-            intent.putExtra("title", title);
-            intent.putExtra("date", date);
-            intent.putExtra("author", author);
-            startService(intent);
-            bindService(intent, serviceConnection, Context.BIND_AUTO_CREATE);
-        } else {
-            // TODO
-            Intent broadcastIntent = new Intent(Broadcast_PLAY_NEW_AUDIO);
-            broadcastIntent.putExtra("media", path);
-            broadcastIntent.putExtra("title", title);
-            broadcastIntent.putExtra("date", date);
-            broadcastIntent.putExtra("author", author);
-            sendBroadcast(broadcastIntent);
-        }
+        Intent broadcastIntent = new Intent(Broadcast_PLAY_NEW_AUDIO);
+        broadcastIntent.putExtra("sermon", sermon);
+        sendBroadcast(broadcastIntent);
     }
 
     private void pauseAudio() {
@@ -177,46 +221,82 @@ public class SermonActivity extends AppCompatActivity implements MediaPlayerServ
         sendBroadcast(broadcastIntent);
     }
 
-    private SermonsAdapter.ViewHolder currentSermonHolder;
+//    private SermonsAdapter.ViewHolder currentSermonHolder;
 
+    // TODO only do this if currentSermonHolder is visible
     SermonsAdapter.sermonViewListener clickListener = new SermonsAdapter.sermonViewListener() {
         @Override
         public void onItemClicked(Sermon sermon, SermonsAdapter.ViewHolder holder) {
-            if (holder.isPlaying()) {// pause pressed
-                pauseAudio();
-                holder.setPlayStatus(SermonsAdapter.PlaybackStatus.PAUSED);
-            }
-            else { // play pressed
+//            if (holder.isPlaying()) {// pause pressed
+//                pauseAudio();
+//                holder.setPlayStatus(PlaybackStatus.PAUSED);
+//            }
+//            else { // play pressed
+//
+//                if (currentSermonHolder == null) {
+//                    // no existing audio, start new sermon
+//                    playAudio(sermon);
+//                    holder.setPlayStatus(PlaybackStatus.PLAYING);
+//                    currentSermonHolder = holder;
+//                }
+//                else if (currentSermonHolder != holder) { // play pressed with existing audio
+//                    // pause existing audio
+//                    currentSermonHolder.setPlayStatus(PlaybackStatus.STOPPED);
+//                    playAudio(sermon);
+//                    holder.setPlayStatus(PlaybackStatus.PLAYING);
+//                    currentSermonHolder = holder;
+//                } else { // resume current sermon
+//                    resumeAudio();
+//                    holder.setPlayStatus(PlaybackStatus.PLAYING);
+//                }
+//
+//            }
 
-                if (currentSermonHolder == null) {
-                    // no existing audio, start new sermon
-                    playAudio(sermon);
-                    holder.setPlayStatus(SermonsAdapter.PlaybackStatus.PLAYING);
-                    currentSermonHolder = holder;
-                }
-                else if (currentSermonHolder != holder) { // play pressed with existing audio
-                    // pause existing audio
-                    currentSermonHolder.setPlayStatus(SermonsAdapter.PlaybackStatus.STOPPED);
-                    playAudio(sermon);
-                    holder.setPlayStatus(SermonsAdapter.PlaybackStatus.PLAYING);
-                    currentSermonHolder = holder;
-                } else { // resume current sermon
+
+            if (currentSermonId != -1 && sermon.getId() == currentSermonId) {
+                // clicked on the current sermon, flip play status
+                if (mediaPlayerService.getStatus() == PlaybackStatus.PLAYING)
+                    pauseAudio();
+                else
                     resumeAudio();
-                    holder.setPlayStatus(SermonsAdapter.PlaybackStatus.PLAYING);
-                }
-
+            } else {
+                // play new audio
+                playAudio(sermon);
             }
+
 
         }
     };
 
     @Override
     public void paused() {
-        currentSermonHolder.setPlayStatus(SermonsAdapter.PlaybackStatus.PAUSED);
+        sermons.get(currentSermonId).setStatus(PlaybackStatus.PAUSED);
+        sermonsAdapter.notifyItemChanged(currentSermonId);
     }
 
     @Override
-    public void playing() {
-        currentSermonHolder.setPlayStatus(SermonsAdapter.PlaybackStatus.PLAYING);
+    public void playing(int sermonId) {
+        if (currentSermonId == -1) {
+            sermons.get(sermonId).setStatus(PlaybackStatus.PLAYING);
+            sermonsAdapter.notifyItemChanged(sermonId);
+            currentSermonId = sermonId;
+        } else if (currentSermonId != sermonId) { // stop current, play new
+            sermons.get(currentSermonId).setStatus(PlaybackStatus.STOPPED);
+            sermonsAdapter.notifyItemChanged(currentSermonId);
+            sermons.get(sermonId).setStatus(PlaybackStatus.PLAYING);
+            sermonsAdapter.notifyItemChanged(sermonId);
+            currentSermonId = sermonId;
+        } else {
+            // resume current sermon
+            sermons.get(currentSermonId).setStatus(PlaybackStatus.PLAYING);
+            sermonsAdapter.notifyItemChanged(sermonId);
+        }
+    }
+
+    @Override
+    public void stopped() {
+        sermons.get(currentSermonId).setStatus(PlaybackStatus.STOPPED);
+        sermonsAdapter.notifyItemChanged(currentSermonId);
+        currentSermonId = -1;
     }
 }
