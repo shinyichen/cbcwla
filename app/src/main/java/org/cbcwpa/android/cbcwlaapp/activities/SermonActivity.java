@@ -92,10 +92,12 @@ public class SermonActivity extends AppCompatActivity implements MediaPlayerServ
     protected void onStart() {
         super.onStart();
 
-        // bind to media player service
-        Intent intent = new Intent(this, MediaPlayerService.class);
-//        startService(intent);
-        bindService(intent, serviceConnection, Context.BIND_AUTO_CREATE);
+        // bind to media player service if it's running (audio is playing)
+        // if it's not running, start the service only when audio play is requested
+        if (MediaPlayerService.isRunning) {
+            Intent intent = new Intent(this, MediaPlayerService.class);
+            bindService(intent, serviceConnection, Context.BIND_AUTO_CREATE);
+        }
     }
 
     @Override
@@ -208,6 +210,15 @@ public class SermonActivity extends AppCompatActivity implements MediaPlayerServ
     };
 
     private void playAudio(Sermon sermon) {
+
+        // we didn't make connection when activity started because service was not active
+        // (there was no audio playing)
+        // so now we need to start the service
+        if (!serviceBound) {
+            Intent playerIntent = new Intent(this, MediaPlayerService.class);
+            startService(playerIntent);
+            bindService(playerIntent, serviceConnection, Context.BIND_AUTO_CREATE);
+        }
         Intent broadcastIntent = new Intent(Broadcast_PLAY_NEW_AUDIO);
         broadcastIntent.putExtra("sermon", sermon);
         sendBroadcast(broadcastIntent);

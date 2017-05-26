@@ -1,6 +1,5 @@
 package org.cbcwpa.android.cbcwlaapp.activities;
 
-import android.content.Context;
 import android.content.Intent;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
@@ -9,7 +8,6 @@ import android.view.View;
 import android.widget.ImageView;
 
 import org.cbcwpa.android.cbcwlaapp.R;
-import org.cbcwpa.android.cbcwlaapp.services.MediaPlayerService;
 
 public class MainActivity extends AppCompatActivity {
 
@@ -39,20 +37,7 @@ public class MainActivity extends AppCompatActivity {
     }
 
     @Override
-    protected void onStart() {
-        super.onStart();
-
-        // start media player service
-        Intent intent = new Intent(this, MediaPlayerService.class);
-        startService(intent);
-    }
-
-    @Override
     protected void onDestroy() {
-
-        // stop media player service
-        Intent intent = new Intent(this, MediaPlayerService.class);
-        stopService(intent);
 
         super.onDestroy();
 

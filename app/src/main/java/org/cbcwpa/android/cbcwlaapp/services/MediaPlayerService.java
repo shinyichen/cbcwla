@@ -49,7 +49,7 @@ public class MediaPlayerService extends Service implements
 
     private AudioManager audioManager;
 
-    private boolean serviceStarted = false;
+    public static boolean isRunning = false;
 
 
     /****************** service ***********************/
@@ -83,7 +83,7 @@ public class MediaPlayerService extends Service implements
         //Listen for new Audio to play -- BroadcastReceiver
         registerAudioControlBroadcasts();
 
-        serviceStarted = true;
+        isRunning = true;
     }
 
     @Override
@@ -127,14 +127,24 @@ public class MediaPlayerService extends Service implements
 
         removeNotification();
 
-        Log.i(TAG, "MediaPlayerService destroyed");
+        Log.i(TAG, "MediaPlayerService destroyed properly");
 
         // unregister broadcast receivers
         unregisterReceiver(becomingNoisyReceiver);
         unregisterAudioControlBroadcasts();
 
-        serviceStarted = false;
+        // remove notifications
+        ((NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE)).cancel(NOTIFICATION_ID);
 
+        isRunning = false;
+
+    }
+
+    @Override
+    public void onTaskRemoved(Intent rootIntent) {
+        // property shutdown service when swipe killed the app
+        // requires setting stopWithTask to false in manifest
+        stopSelf();
     }
 
     /*************** headphone removed ******************/
@@ -665,10 +675,6 @@ public class MediaPlayerService extends Service implements
     }
 
     /****************** communicate with activity through callback **********/
-
-    public boolean isServiceRunning() {
-        return serviceStarted;
-    }
 
     private MediaListener client;
 
