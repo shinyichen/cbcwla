@@ -413,7 +413,7 @@ public class MediaPlayerService extends Service implements
                 mediaPlayer.reset();
             }
 
-            sermon = (Sermon) intent.getSerializableExtra("sermon");
+            sermon = (Sermon) intent.getParcelableExtra("sermon");
 
             initMediaPlayer();
             buildNotification(PlaybackStatus.PLAYING);

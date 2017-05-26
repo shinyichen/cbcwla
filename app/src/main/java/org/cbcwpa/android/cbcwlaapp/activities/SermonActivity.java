@@ -59,7 +59,13 @@ public class SermonActivity extends AppCompatActivity implements MediaPlayerServ
         setContentView(R.layout.activity_sermon);
 
         try {
-            sermons = new SermonRSSParser().execute(sermon_rss_path).get();
+            if (savedInstanceState != null) {
+                currentSermonId = savedInstanceState.getInt("CurrentSermonId", -1);
+                sermons = savedInstanceState.getParcelableArrayList("Sermons");
+            } else {
+                sermons = new SermonRSSParser().execute(sermon_rss_path).get();
+                currentSermonId = -1;
+            }
         } catch (Exception e) {
             Log.e(TAG, "Error reading RSS feed");
         }
@@ -94,18 +100,14 @@ public class SermonActivity extends AppCompatActivity implements MediaPlayerServ
 
     @Override
     public void onSaveInstanceState(Bundle savedInstanceState) {
-//        savedInstanceState.putBoolean("ServiceState", serviceBound);
         savedInstanceState.putInt("CurrentSermonId", currentSermonId);
-        // TODO save sermons
+        savedInstanceState.putParcelableArrayList("Sermons", sermons);
         super.onSaveInstanceState(savedInstanceState);
     }
 
     @Override
     public void onRestoreInstanceState(Bundle savedInstanceState) {
         super.onRestoreInstanceState(savedInstanceState);
-//        serviceBound = savedInstanceState.getBoolean("ServiceState");
-        currentSermonId = savedInstanceState.getInt("CurrentSermonId", -1);
-        // TODO get sermons
     }
 
     @Override
@@ -221,37 +223,9 @@ public class SermonActivity extends AppCompatActivity implements MediaPlayerServ
         sendBroadcast(broadcastIntent);
     }
 
-//    private SermonsAdapter.ViewHolder currentSermonHolder;
-
-    // TODO only do this if currentSermonHolder is visible
     SermonsAdapter.sermonViewListener clickListener = new SermonsAdapter.sermonViewListener() {
         @Override
         public void onItemClicked(Sermon sermon, SermonsAdapter.ViewHolder holder) {
-//            if (holder.isPlaying()) {// pause pressed
-//                pauseAudio();
-//                holder.setPlayStatus(PlaybackStatus.PAUSED);
-//            }
-//            else { // play pressed
-//
-//                if (currentSermonHolder == null) {
-//                    // no existing audio, start new sermon
-//                    playAudio(sermon);
-//                    holder.setPlayStatus(PlaybackStatus.PLAYING);
-//                    currentSermonHolder = holder;
-//                }
-//                else if (currentSermonHolder != holder) { // play pressed with existing audio
-//                    // pause existing audio
-//                    currentSermonHolder.setPlayStatus(PlaybackStatus.STOPPED);
-//                    playAudio(sermon);
-//                    holder.setPlayStatus(PlaybackStatus.PLAYING);
-//                    currentSermonHolder = holder;
-//                } else { // resume current sermon
-//                    resumeAudio();
-//                    holder.setPlayStatus(PlaybackStatus.PLAYING);
-//                }
-//
-//            }
-
 
             if (currentSermonId != -1 && sermon.getId() == currentSermonId) {
                 // clicked on the current sermon, flip play status
@@ -270,8 +244,10 @@ public class SermonActivity extends AppCompatActivity implements MediaPlayerServ
 
     @Override
     public void paused() {
-        sermons.get(currentSermonId).setStatus(PlaybackStatus.PAUSED);
-        sermonsAdapter.notifyItemChanged(currentSermonId);
+        if (currentSermonId != -1) {
+            sermons.get(currentSermonId).setStatus(PlaybackStatus.PAUSED);
+            sermonsAdapter.notifyItemChanged(currentSermonId);
+        }
     }
 
     @Override
@@ -295,8 +271,10 @@ public class SermonActivity extends AppCompatActivity implements MediaPlayerServ
 
     @Override
     public void stopped() {
-        sermons.get(currentSermonId).setStatus(PlaybackStatus.STOPPED);
-        sermonsAdapter.notifyItemChanged(currentSermonId);
-        currentSermonId = -1;
+        if (currentSermonId != -1) {
+            sermons.get(currentSermonId).setStatus(PlaybackStatus.STOPPED);
+            sermonsAdapter.notifyItemChanged(currentSermonId);
+            currentSermonId = -1;
+        }
     }
 }

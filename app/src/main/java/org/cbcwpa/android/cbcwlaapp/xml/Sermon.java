@@ -1,10 +1,13 @@
 package org.cbcwpa.android.cbcwlaapp.xml;
 
+import android.os.Parcel;
+import android.os.Parcelable;
+
 import org.cbcwpa.android.cbcwlaapp.utils.PlaybackStatus;
 
 import java.io.Serializable;
 
-public class Sermon implements Serializable{
+public class Sermon implements Parcelable{
 
     private int id;
     private String title;
@@ -15,6 +18,20 @@ public class Sermon implements Serializable{
     private String audioPath;
     private PlaybackStatus status = PlaybackStatus.STOPPED;
 
+    public Sermon() {
+
+    }
+
+    private Sermon(Parcel p) {
+        this.id = p.readInt();
+        this.title = p.readString();
+        this.link = p.readString();
+        this.pubDate = p.readString();
+        this.description = p.readString();
+        this.author = p.readString();
+        this.audioPath = p.readString();
+        this.status = PlaybackStatus.valueOf(p.readString());
+    }
     public void setId(int id) {
         this.id = id;
     }
@@ -78,5 +95,32 @@ public class Sermon implements Serializable{
     public PlaybackStatus getStatus() {
         return status;
     }
+
+    @Override
+    public int describeContents() {
+        return 0;
+    }
+
+    @Override
+    public void writeToParcel(Parcel dest, int flags) {
+        dest.writeInt(id);
+        dest.writeString(title);
+        dest.writeString(link);
+        dest.writeString(pubDate);
+        dest.writeString(description);
+        dest.writeString(author);
+        dest.writeString(audioPath);
+        dest.writeString(status.name());
+    }
+
+    public static final Parcelable.Creator<Sermon> CREATOR = new Parcelable.Creator<Sermon>() {
+        public Sermon createFromParcel(Parcel in) {
+            return new Sermon(in);
+        }
+
+        public Sermon[] newArray(int size) {
+            return new Sermon[size];
+        }
+    };
 
 }
