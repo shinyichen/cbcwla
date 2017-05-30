@@ -69,19 +69,13 @@ public class SermonsAdapter extends RecyclerView.Adapter<SermonsAdapter.ViewHold
 
     private ArrayList<Sermon> sermons;
 
-    private Context context;
-
     private final sermonViewListener clickListener;
 
-    public SermonsAdapter(Context context, ArrayList<Sermon> sermons, sermonViewListener listener) {
-        this.context = context;
+    public SermonsAdapter(ArrayList<Sermon> sermons, sermonViewListener listener) {
         this.sermons = sermons;
         this.clickListener = listener;
     }
 
-    public Context getContext() {
-        return context;
-    }
 
     @Override
     public ViewHolder onCreateViewHolder(ViewGroup parent, int viewType) {

@@ -1,32 +1,39 @@
-package org.cbcwpa.android.cbcwlaapp.activities;
+package org.cbcwpa.android.cbcwlaapp.fragments;
 
 import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
 import android.content.ServiceConnection;
+import android.net.Uri;
+import android.os.Bundle;
 import android.os.IBinder;
-import android.support.annotation.NonNull;
-import android.support.v4.app.NavUtils;
-import android.support.v7.app.AppCompatActivity;
+import android.support.v4.app.Fragment;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
-import android.support.v7.widget.Toolbar;
-
-import android.os.Bundle;
 import android.util.Log;
-import android.view.Menu;
-import android.view.MenuItem;
+import android.view.LayoutInflater;
+import android.view.View;
+import android.view.ViewGroup;
 
 import org.cbcwpa.android.cbcwlaapp.R;
+import org.cbcwpa.android.cbcwlaapp.activities.SermonActivity;
 import org.cbcwpa.android.cbcwlaapp.adapters.SermonsAdapter;
 import org.cbcwpa.android.cbcwlaapp.services.MediaPlayerService;
 import org.cbcwpa.android.cbcwlaapp.utils.PlaybackStatus;
-import org.cbcwpa.android.cbcwlaapp.xml.SermonRSSParser;
 import org.cbcwpa.android.cbcwlaapp.xml.Sermon;
+import org.cbcwpa.android.cbcwlaapp.xml.SermonRSSParser;
 
 import java.util.ArrayList;
 
-public class SermonActivity extends AppCompatActivity implements MediaPlayerService.MediaListener{
+/**
+ * A simple {@link Fragment} subclass.
+ * Activities that contain this fragment must implement the
+ * {@link SermonFragment.OnFragmentInteractionListener} interface
+ * to handle interaction events.
+ * Use the {@link SermonFragment#newInstance} factory method to
+ * create an instance of this fragment.
+ */
+public class SermonFragment extends Fragment implements MediaPlayerService.MediaListener {
 
     private static final String TAG = "SermonActivity";
 
@@ -52,14 +59,33 @@ public class SermonActivity extends AppCompatActivity implements MediaPlayerServ
 
     public static final String Broadcast_RESUME_AUDIO = "org.cbcwla.android.ResumeAudio";
 
-    public SermonActivity() {
+    public SermonFragment() {
+        // Required empty public constructor
+    }
+
+    /**
+     * Use this factory method to create a new instance of
+     * this fragment using the provided parameters.
+     *
+     * @return A new instance of fragment SermonFragment.
+     */
+    // TODO: Rename and change types and number of parameters
+    public static SermonFragment newInstance() {
+        SermonFragment fragment = new SermonFragment();
+//        Bundle args = new Bundle();
+//        args.putString(ARG_PARAM1, param1);
+//        args.putString(ARG_PARAM2, param2);
+//        fragment.setArguments(args);
+        return fragment;
     }
 
     @Override
-    protected void onCreate(Bundle savedInstanceState) {
+    public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_sermon);
-
+//        if (getArguments() != null) {
+//            mParam1 = getArguments().getString(ARG_PARAM1);
+//            mParam2 = getArguments().getString(ARG_PARAM2);
+//        }
         try {
             if (savedInstanceState != null) {
                 currentSermonId = savedInstanceState.getInt("CurrentSermonId", -1);
@@ -72,114 +98,81 @@ public class SermonActivity extends AppCompatActivity implements MediaPlayerServ
             Log.e(TAG, "Error reading RSS feed");
         }
 
-        try {
-            Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
-            setSupportActionBar(toolbar);
-            getSupportActionBar().setDisplayHomeAsUpEnabled(true);
-        } catch (Exception e) {
-            Log.e(TAG, e.getMessage());
-        }
-
-        // main list view
-        sermonsListView = (RecyclerView) findViewById(R.id.sermon_activity_list);
-        sermonsAdapter = new SermonsAdapter(sermons, clickListener);
-        sermonsListView.setLayoutManager(new LinearLayoutManager(this));
-        sermonsListView.setAdapter(sermonsAdapter);
-
-        Log.i(TAG, "SermonActivity created");
 
     }
 
     @Override
-    protected void onStart() {
+    public View onCreateView(LayoutInflater inflater, ViewGroup container,
+                             Bundle savedInstanceState) {
+
+        ViewGroup rootView = (ViewGroup) inflater
+                .inflate(R.layout.fragment_sermon, container, false);
+
+        // main list view
+        sermonsListView = (RecyclerView) rootView.findViewById(R.id.sermon_activity_list);
+        sermonsAdapter = new SermonsAdapter(sermons, clickListener);
+        sermonsListView.setLayoutManager(new LinearLayoutManager(getContext()));
+        sermonsListView.setAdapter(sermonsAdapter);
+
+        // Inflate the layout for this fragment
+        return rootView;
+    }
+
+    @Override
+    public void onStart() {
         super.onStart();
 
         // bind to media player service if it's running (audio is playing)
         // if it's not running, start the service only when audio play is requested
         if (MediaPlayerService.isRunning) {
-            Intent intent = new Intent(this, MediaPlayerService.class);
-            bindService(intent, serviceConnection, Context.BIND_AUTO_CREATE);
+            Intent intent = new Intent(getActivity(), MediaPlayerService.class);
+            getActivity().bindService(intent, serviceConnection, Context.BIND_AUTO_CREATE);
         }
     }
 
     @Override
     public void onSaveInstanceState(Bundle savedInstanceState) {
-        savedInstanceState.putInt("CurrentSermonId", currentSermonId);
+      savedInstanceState.putInt("CurrentSermonId", currentSermonId);
         savedInstanceState.putParcelableArrayList("Sermons", sermons);
         super.onSaveInstanceState(savedInstanceState);
     }
 
     @Override
-    public void onRestoreInstanceState(Bundle savedInstanceState) {
-        super.onRestoreInstanceState(savedInstanceState);
+    public void onAttach(Context context) {
+        super.onAttach(context);
     }
 
     @Override
-    public void onBackPressed() {
-        // up goes to parent (MainActivity)
-        // back by default goes to previous activity on stack
-//        onSupportNavigateUp();
-        navigateUp();
-    }
-
-
-    @Override
-    public boolean supportShouldUpRecreateTask(@NonNull Intent targetIntent) {
-        // if user click on notification and parent activity is gone
-        // this will recreate parent activity when navigate up
-        return true;
+    public void onDetach() {
+        super.onDetach();
     }
 
     @Override
-    public boolean onSupportNavigateUp() {
-        navigateUp();
-        return true;
-    }
-
-    private void navigateUp() {
-        // go up to the parent activity without recreating the parent
-        Intent h = NavUtils.getParentActivityIntent(this);
-        h.setFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_SINGLE_TOP);
-        NavUtils.navigateUpTo(this, h);
-    }
-
-    @Override
-    protected void onDestroy() {
+    public void onDestroy() {
         super.onDestroy();
 
         // unbind from media player service
         if (serviceBound) {
             mediaPlayerService.unregisterClient();
-            unbindService(serviceConnection);
+            getActivity().unbindService(serviceConnection);
         }
 
         Log.i(TAG, "destroyed");
     }
 
-
-    @Override
-    public boolean onCreateOptionsMenu(Menu menu) {
-        // Inflate the menu; this adds items to the action bar if it is present.
-//        getMenuInflater().inflate(R.menu.menu_sermon, menu);
-        return true;
-    }
-
-    @Override
-    public boolean onOptionsItemSelected(MenuItem item) {
-        // Handle action bar item clicks here. The action bar will
-        // automatically handle clicks on the Home/Up button, so long
-        // as you specify a parent activity in AndroidManifest.xml.
-        int id = item.getItemId();
-
-        //noinspection SimplifiableIfStatement
-        if (id == R.id.action_settings) {
-            return true;
-        } else if (id == android.R.id.home) { // up button
-//            NavUtils.navigateUpFromSameTask(this);
-            navigateUp();
-        }
-
-        return super.onOptionsItemSelected(item);
+    /**
+     * This interface must be implemented by activities that contain this
+     * fragment to allow an interaction in this fragment to be communicated
+     * to the activity and potentially other fragments contained in that
+     * activity.
+     * <p>
+     * See the Android Training lesson <a href=
+     * "http://developer.android.com/training/basics/fragments/communicating.html"
+     * >Communicating with Other Fragments</a> for more information.
+     */
+    public interface OnFragmentInteractionListener {
+        // TODO: Update argument type and name
+        void onFragmentInteraction(Uri uri);
     }
 
     // bind to MediaServicePlayer
@@ -190,7 +183,7 @@ public class SermonActivity extends AppCompatActivity implements MediaPlayerServ
             MediaPlayerService.LocalBinder binder = (MediaPlayerService.LocalBinder) iBinder;
             mediaPlayerService = binder.getService();
             serviceBound = true;
-            mediaPlayerService.registerClient(SermonActivity.this);
+            mediaPlayerService.registerClient(SermonFragment.this);
 
             // if service already existed, get current play status
             int id = mediaPlayerService.getCurrentSermonId();
@@ -204,7 +197,7 @@ public class SermonActivity extends AppCompatActivity implements MediaPlayerServ
             if (playOnServiceConnect != null) {
                 Intent broadcastIntent = new Intent(Broadcast_PLAY_NEW_AUDIO);
                 broadcastIntent.putExtra("sermon", playOnServiceConnect);
-                sendBroadcast(broadcastIntent);
+                getActivity().sendBroadcast(broadcastIntent);
                 playOnServiceConnect = null;
             }
 
@@ -217,7 +210,6 @@ public class SermonActivity extends AppCompatActivity implements MediaPlayerServ
             serviceBound = false;
         }
     };
-
     private void playAudio(Sermon sermon) {
 
         // we didn't make connection when activity started because service was not active
@@ -225,25 +217,25 @@ public class SermonActivity extends AppCompatActivity implements MediaPlayerServ
         // so now we need to start the service
         if (!serviceBound) {
             playOnServiceConnect = sermon;
-            Intent playerIntent = new Intent(this, MediaPlayerService.class);
-            startService(playerIntent);
-            bindService(playerIntent, serviceConnection, Context.BIND_AUTO_CREATE);
+            Intent playerIntent = new Intent(getActivity(), MediaPlayerService.class);
+            getActivity().startService(playerIntent);
+            getActivity().bindService(playerIntent, serviceConnection, Context.BIND_AUTO_CREATE);
         }
         else {
             Intent broadcastIntent = new Intent(Broadcast_PLAY_NEW_AUDIO);
             broadcastIntent.putExtra("sermon", sermon);
-            sendBroadcast(broadcastIntent);
+            getActivity().sendBroadcast(broadcastIntent);
         }
     }
 
     private void pauseAudio() {
         Intent broadcastIntent = new Intent(Broadcast_PAUSE_AUDIO);
-        sendBroadcast(broadcastIntent);
+        getActivity().sendBroadcast(broadcastIntent);
     }
 
     private void resumeAudio() {
         Intent broadcastIntent = new Intent(Broadcast_RESUME_AUDIO);
-        sendBroadcast(broadcastIntent);
+        getActivity().sendBroadcast(broadcastIntent);
     }
 
     SermonsAdapter.sermonViewListener clickListener = new SermonsAdapter.sermonViewListener() {

@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <item
+        android:id="@+id/navigation_sermon"
+        android:icon="@drawable/ic_nav_sermon"
+        android:title="@string/sermon_activity" />
+
+    <item
+        android:id="@+id/navigation_song"
+        android:icon="@drawable/ic_nav_song"
+        android:title="@string/life_activity" />
+
+</menu>

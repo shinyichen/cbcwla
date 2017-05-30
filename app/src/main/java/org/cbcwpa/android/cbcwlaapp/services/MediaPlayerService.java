@@ -23,6 +23,7 @@ import android.telephony.TelephonyManager;
 import android.util.Log;
 
 import org.cbcwpa.android.cbcwlaapp.R;
+import org.cbcwpa.android.cbcwlaapp.activities.HomeActivity;
 import org.cbcwpa.android.cbcwlaapp.activities.SermonActivity;
 import org.cbcwpa.android.cbcwlaapp.utils.PlaybackStatus;
 import org.cbcwpa.android.cbcwlaapp.xml.Sermon;
@@ -585,7 +586,7 @@ public class MediaPlayerService extends Service implements
             play_pauseAction = playbackAction(0);
         }
 
-        Intent homeIntent = new Intent(this, SermonActivity.class);
+        Intent homeIntent = new Intent(this, HomeActivity.class);
         PendingIntent pendingIntent = PendingIntent.getActivity(this, 0,
                 homeIntent, PendingIntent.FLAG_UPDATE_CURRENT);
 
