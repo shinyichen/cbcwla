@@ -24,7 +24,6 @@ import android.util.Log;
 
 import org.cbcwpa.android.cbcwlaapp.R;
 import org.cbcwpa.android.cbcwlaapp.activities.HomeActivity;
-import org.cbcwpa.android.cbcwlaapp.activities.SermonActivity;
 import org.cbcwpa.android.cbcwlaapp.utils.PlaybackStatus;
 import org.cbcwpa.android.cbcwlaapp.xml.Sermon;
 
@@ -452,15 +451,15 @@ public class MediaPlayerService extends Service implements
     private void registerAudioControlBroadcasts() {
 
         // register to receive play new audio broadcast
-        IntentFilter filter = new IntentFilter(SermonActivity.Broadcast_PLAY_NEW_AUDIO);
+        IntentFilter filter = new IntentFilter(Constants.Broadcast_PLAY_NEW_AUDIO);
         registerReceiver(playNewAudio, filter);
 
         // register to receive pause audio broadcast
-        filter = new IntentFilter(SermonActivity.Broadcast_PAUSE_AUDIO);
+        filter = new IntentFilter(Constants.Broadcast_PAUSE_AUDIO);
         registerReceiver(pauseAudio, filter);
 
         // register to receive start audio broadcast
-        filter = new IntentFilter(SermonActivity.Broadcast_RESUME_AUDIO);
+        filter = new IntentFilter(Constants.Broadcast_RESUME_AUDIO);
         registerReceiver(resumeAudio, filter);
     }
 

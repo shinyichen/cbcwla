@@ -16,12 +16,11 @@ import android.view.View;
 import android.view.ViewGroup;
 
 import org.cbcwpa.android.cbcwlaapp.R;
-import org.cbcwpa.android.cbcwlaapp.activities.SermonActivity;
 import org.cbcwpa.android.cbcwlaapp.adapters.SermonsAdapter;
+import org.cbcwpa.android.cbcwlaapp.services.Constants;
 import org.cbcwpa.android.cbcwlaapp.services.MediaPlayerService;
 import org.cbcwpa.android.cbcwlaapp.utils.PlaybackStatus;
 import org.cbcwpa.android.cbcwlaapp.xml.Sermon;
-import org.cbcwpa.android.cbcwlaapp.xml.SermonRSSParser;
 
 import java.util.ArrayList;
 
@@ -35,9 +34,7 @@ import java.util.ArrayList;
  */
 public class SermonFragment extends Fragment implements MediaPlayerService.MediaListener {
 
-    private static final String TAG = "SermonActivity";
-
-    private static final String sermon_rss_path = "http://cbcwla.org/home/service-type/sunday-sermons/feed/";
+    private static final String TAG = "SermonFragment";
 
     private ArrayList<Sermon> sermons = new ArrayList<>();
 
@@ -53,12 +50,6 @@ public class SermonFragment extends Fragment implements MediaPlayerService.Media
 
     private Sermon playOnServiceConnect;
 
-    public static final String Broadcast_PLAY_NEW_AUDIO = "org.cbcwla.android.PlayNewAudio";
-
-    public static final String Broadcast_PAUSE_AUDIO = "org.cbcwla.android.PauseAudio";
-
-    public static final String Broadcast_RESUME_AUDIO = "org.cbcwla.android.ResumeAudio";
-
     public SermonFragment() {
         // Required empty public constructor
     }
@@ -70,28 +61,24 @@ public class SermonFragment extends Fragment implements MediaPlayerService.Media
      * @return A new instance of fragment SermonFragment.
      */
     // TODO: Rename and change types and number of parameters
-    public static SermonFragment newInstance() {
+    public static SermonFragment newInstance(ArrayList<Sermon> sermons) {
         SermonFragment fragment = new SermonFragment();
-//        Bundle args = new Bundle();
-//        args.putString(ARG_PARAM1, param1);
-//        args.putString(ARG_PARAM2, param2);
-//        fragment.setArguments(args);
+        Bundle args = new Bundle();
+        args.putParcelableArrayList("sermons", sermons);
+        fragment.setArguments(args);
         return fragment;
     }
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-//        if (getArguments() != null) {
-//            mParam1 = getArguments().getString(ARG_PARAM1);
-//            mParam2 = getArguments().getString(ARG_PARAM2);
-//        }
+        if (getArguments() != null) {
+            sermons = getArguments().getParcelableArrayList("sermons");
+        }
         try {
             if (savedInstanceState != null) {
                 currentSermonId = savedInstanceState.getInt("CurrentSermonId", -1);
-                sermons = savedInstanceState.getParcelableArrayList("Sermons");
             } else {
-                sermons = new SermonRSSParser().execute(sermon_rss_path).get();
                 currentSermonId = -1;
             }
         } catch (Exception e) {
@@ -133,7 +120,7 @@ public class SermonFragment extends Fragment implements MediaPlayerService.Media
     @Override
     public void onSaveInstanceState(Bundle savedInstanceState) {
       savedInstanceState.putInt("CurrentSermonId", currentSermonId);
-        savedInstanceState.putParcelableArrayList("Sermons", sermons);
+//        savedInstanceState.putParcelableArrayList("Sermons", sermons);
         super.onSaveInstanceState(savedInstanceState);
     }
 
@@ -195,7 +182,7 @@ public class SermonFragment extends Fragment implements MediaPlayerService.Media
             currentSermonId = id;
 
             if (playOnServiceConnect != null) {
-                Intent broadcastIntent = new Intent(Broadcast_PLAY_NEW_AUDIO);
+                Intent broadcastIntent = new Intent(Constants.Broadcast_PLAY_NEW_AUDIO);
                 broadcastIntent.putExtra("sermon", playOnServiceConnect);
                 getActivity().sendBroadcast(broadcastIntent);
                 playOnServiceConnect = null;
@@ -222,19 +209,19 @@ public class SermonFragment extends Fragment implements MediaPlayerService.Media
             getActivity().bindService(playerIntent, serviceConnection, Context.BIND_AUTO_CREATE);
         }
         else {
-            Intent broadcastIntent = new Intent(Broadcast_PLAY_NEW_AUDIO);
+            Intent broadcastIntent = new Intent(Constants.Broadcast_PLAY_NEW_AUDIO);
             broadcastIntent.putExtra("sermon", sermon);
             getActivity().sendBroadcast(broadcastIntent);
         }
     }
 
     private void pauseAudio() {
-        Intent broadcastIntent = new Intent(Broadcast_PAUSE_AUDIO);
+        Intent broadcastIntent = new Intent(Constants.Broadcast_PAUSE_AUDIO);
         getActivity().sendBroadcast(broadcastIntent);
     }
 
     private void resumeAudio() {
-        Intent broadcastIntent = new Intent(Broadcast_RESUME_AUDIO);
+        Intent broadcastIntent = new Intent(Constants.Broadcast_RESUME_AUDIO);
         getActivity().sendBroadcast(broadcastIntent);
     }
 
