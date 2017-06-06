@@ -3,8 +3,6 @@ package org.cbcwpa.android.cbcwlaapp.xml;
 import android.os.Parcel;
 import android.os.Parcelable;
 
-import org.cbcwpa.android.cbcwlaapp.utils.PlaybackStatus;
-
 public class Song implements Parcelable {
 
     private int id;

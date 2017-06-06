@@ -16,40 +16,46 @@
         android:supportsRtl="true"
         android:theme="@style/AppTheme">
 
-        <!--<activity android:name=".activities.MainActivity"-->
-            <!--android:theme="@style/Theme.AppCompat.Light.NoActionBar"-->
-            <!--android:launchMode="singleTop">-->
-            <!--<intent-filter>-->
-                <!--<action android:name="android.intent.action.MAIN" />-->
+        <!-- <activity android:name=".activities.MainActivity" -->
+        <!-- android:theme="@style/Theme.AppCompat.Light.NoActionBar" -->
+        <!-- android:launchMode="singleTop"> -->
+        <!-- <intent-filter> -->
+        <!-- <action android:name="android.intent.action.MAIN" /> -->
 
-                <!--<category android:name="android.intent.category.LAUNCHER" />-->
-            <!--</intent-filter>-->
-        <!--</activity>-->
 
-        <activity android:name=".activities.HomeActivity"
-            android:theme="@style/Theme.AppCompat.Light.NoActionBar"
-            android:launchMode="singleTop">
+        <!-- <category android:name="android.intent.category.LAUNCHER" /> -->
+        <!-- </intent-filter> -->
+        <!-- </activity> -->
+
+        <activity
+            android:name=".activities.HomeActivity"
+            android:launchMode="singleTop"
+            android:theme="@style/Theme.AppCompat.Light.NoActionBar">
             <intent-filter>
-            <action android:name="android.intent.action.MAIN" />
+                <action android:name="android.intent.action.MAIN" />
 
-            <category android:name="android.intent.category.LAUNCHER" />
+                <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
 
-        <!--<activity-->
-            <!--android:name=".activities.SermonActivity"-->
-            <!--android:label="@string/sermon_activity"-->
-            <!--android:launchMode="singleTop"-->
-            <!--android:parentActivityName=".activities.MainActivity"-->
-            <!--android:theme="@style/AppTheme.NoActionBar">-->
-            <!--<meta-data-->
-                <!--android:name="android.support.PARENT_ACTIVITY"-->
-                <!--android:value=".activities.MainActivity"/>-->
-        <!--</activity>-->
+        <!-- <activity -->
+        <!-- android:name=".activities.SermonActivity" -->
+        <!-- android:label="@string/sermon_activity" -->
+        <!-- android:launchMode="singleTop" -->
+        <!-- android:parentActivityName=".activities.MainActivity" -->
+        <!-- android:theme="@style/AppTheme.NoActionBar"> -->
+        <!-- <meta-data -->
+        <!-- android:name="android.support.PARENT_ACTIVITY" -->
+        <!-- android:value=".activities.MainActivity"/> -->
+        <!-- </activity> -->
 
-        <service android:name=".services.MediaPlayerService"
-            android:stopWithTask="false"/>
+        <service
+            android:name=".services.MediaPlayerService"
+            android:stopWithTask="false" />
 
+        <activity android:name=".activities.SongActivity"
+            android:theme="@style/Theme.AppCompat.Light.NoActionBar"
+            android:parentActivityName=".activities.HomeActivity"/>
     </application>
 
 </manifest>

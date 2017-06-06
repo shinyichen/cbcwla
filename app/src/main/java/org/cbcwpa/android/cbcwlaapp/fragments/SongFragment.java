@@ -1,6 +1,7 @@
 package org.cbcwpa.android.cbcwlaapp.fragments;
 
 import android.content.Context;
+import android.content.Intent;
 import android.os.Bundle;
 import android.support.v4.app.Fragment;
 import android.support.v7.widget.LinearLayoutManager;
@@ -11,6 +12,7 @@ import android.view.View;
 import android.view.ViewGroup;
 
 import org.cbcwpa.android.cbcwlaapp.R;
+import org.cbcwpa.android.cbcwlaapp.activities.SongActivity;
 import org.cbcwpa.android.cbcwlaapp.adapters.SongsAdapter;
 import org.cbcwpa.android.cbcwlaapp.xml.Song;
 
@@ -44,7 +46,7 @@ public class SongFragment extends Fragment {
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-
+        setRetainInstance(true);
         if (getArguments() != null) {
             songs = getArguments().getParcelableArrayList("songs");
         }
@@ -85,8 +87,9 @@ public class SongFragment extends Fragment {
         @Override
         public void onItemClicked(Song song, SongsAdapter.ViewHolder holder) {
 
-            // TODO
-
+            Intent i = new Intent(getActivity(), SongActivity.class);
+            i.putExtra("song", song);
+            startActivity(i);
 
         }
     };
