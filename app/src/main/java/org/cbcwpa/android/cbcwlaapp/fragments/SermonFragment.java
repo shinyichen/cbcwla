@@ -72,6 +72,7 @@ public class SermonFragment extends Fragment implements MediaPlayerService.Media
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        setRetainInstance(true); // don't destroy when change to another fragment
         if (getArguments() != null) {
             sermons = getArguments().getParcelableArrayList("sermons");
         }
@@ -177,8 +178,12 @@ public class SermonFragment extends Fragment implements MediaPlayerService.Media
             for (Sermon s : sermons) {
                 if (s.getId() == id) {
                     s.setStatus(mediaPlayerService.getStatus());
+                    Log.i(TAG, "Sermon " + id + " is " + mediaPlayerService.getStatus());
                 }
             }
+
+            sermonsAdapter.notifyDataSetChanged();
+
             currentSermonId = id;
 
             if (playOnServiceConnect != null) {
