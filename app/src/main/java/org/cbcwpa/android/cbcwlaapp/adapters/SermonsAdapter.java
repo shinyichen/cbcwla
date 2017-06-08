@@ -31,7 +31,6 @@ public class SermonsAdapter extends RecyclerView.Adapter<SermonsAdapter.ViewHold
         TextView titleView;
         TextView authorView;
         TextView dateView;
-        PlaybackStatus status = PlaybackStatus.STOPPED;
 
         // We also create a constructor that accepts the entire item row
         // and does the view lookups to find each subview
@@ -45,24 +44,6 @@ public class SermonsAdapter extends RecyclerView.Adapter<SermonsAdapter.ViewHold
             titleView = (TextView) itemView.findViewById(R.id.sermon_title);
             authorView = (TextView) itemView.findViewById(R.id.sermon_author);
             dateView = (TextView) itemView.findViewById(R.id.sermon_date);
-        }
-
-        public void setPlayStatus(PlaybackStatus status) {
-            this.status = status;
-            if (status == PlaybackStatus.PLAYING) {
-                playButton.setImageResource(R.drawable.ic_pause_circle_outline_black_48dp);
-                container.setSelected(true);
-            } else if (status == PlaybackStatus.PAUSED) {
-                playButton.setImageResource(R.drawable.ic_play_circle_outline_black_48dp);
-                container.setSelected(true);
-            } else if (status == PlaybackStatus.STOPPED) {
-                playButton.setImageResource(R.drawable.ic_play_circle_outline_black_48dp);
-                container.setSelected(false);
-            }
-        }
-
-        public boolean isPlaying() {
-            return status == PlaybackStatus.PLAYING;
         }
 
     }

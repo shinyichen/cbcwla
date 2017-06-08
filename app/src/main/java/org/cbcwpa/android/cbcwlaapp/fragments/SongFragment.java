@@ -4,6 +4,7 @@ import android.content.Context;
 import android.content.Intent;
 import android.os.Bundle;
 import android.support.v4.app.Fragment;
+import android.support.v4.widget.SwipeRefreshLayout;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
 import android.util.Log;
@@ -24,9 +25,9 @@ public class SongFragment extends Fragment {
 
     private ArrayList<Song> songs = new ArrayList<>();
 
-    private RecyclerView songsListView;
-
     private SongsAdapter songsAdapter;
+
+    private SwipeRefreshLayout refreshLayout;
 
     /**
      * Mandatory empty constructor for the fragment manager to instantiate the
@@ -57,7 +58,15 @@ public class SongFragment extends Fragment {
                              Bundle savedInstanceState) {
         View view = inflater.inflate(R.layout.fragment_song, container, false);
 
-        songsListView = (RecyclerView) view.findViewById(R.id.song_list_view);
+        refreshLayout = (SwipeRefreshLayout) view.findViewById(R.id.songs_refresh_layout);
+        refreshLayout.setOnRefreshListener(new SwipeRefreshLayout.OnRefreshListener() {
+            @Override
+            public void onRefresh() {
+                refresh();
+            }
+        });
+
+        RecyclerView songsListView = (RecyclerView) view.findViewById(R.id.song_list_view);
         songsAdapter = new SongsAdapter(songs, clickListener);
         songsListView.setLayoutManager(new LinearLayoutManager(getContext()));
         songsListView.setAdapter(songsAdapter);
@@ -83,6 +92,10 @@ public class SongFragment extends Fragment {
         Log.i(TAG, "destroyed");
     }
 
+    public interface OnFragmentInteractionListener {
+        ArrayList<Song> refreshSongs();
+    }
+
     SongsAdapter.SongViewListener clickListener = new SongsAdapter.SongViewListener() {
         @Override
         public void onItemClicked(Song song, SongsAdapter.ViewHolder holder) {
@@ -93,6 +106,12 @@ public class SongFragment extends Fragment {
 
         }
     };
+
+    private void refresh() {
+        songs = ((OnFragmentInteractionListener)getActivity()).refreshSongs();
+        songsAdapter.setSongs(songs);
+        refreshLayout.setRefreshing(false);
+    }
 
 
 

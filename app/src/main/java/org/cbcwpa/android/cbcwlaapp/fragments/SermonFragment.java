@@ -62,7 +62,6 @@ public class SermonFragment extends Fragment implements MediaPlayerService.Media
      *
      * @return A new instance of fragment SermonFragment.
      */
-    // TODO: Rename and change types and number of parameters
     public static SermonFragment newInstance(ArrayList<Sermon> sermons) {
         SermonFragment fragment = new SermonFragment();
         Bundle args = new Bundle();
@@ -291,10 +290,8 @@ public class SermonFragment extends Fragment implements MediaPlayerService.Media
                     break;
                 }
             }
-//            sermons.get(sermonId).setStatus(PlaybackStatus.PLAYING);
-//            sermonsAdapter.notifyItemChanged(sermonId);
             currentSermonId = sermonId;
-        } else if (currentSermonId != sermonId) { // stop current, play new
+        } else if (currentSermonId.equals(sermonId)) { // stop current, play new
             for (int i = 0; i < sermons.size(); i++) {
                 Sermon s = sermons.get(i);
                 int count = 0;
@@ -310,10 +307,6 @@ public class SermonFragment extends Fragment implements MediaPlayerService.Media
                 if (count == 2)
                     break;
             }
-//            sermons.get(currentSermonId).setStatus(PlaybackStatus.STOPPED);
-//            sermonsAdapter.notifyItemChanged(currentSermonId);
-//            sermons.get(sermonId).setStatus(PlaybackStatus.PLAYING);
-//            sermonsAdapter.notifyItemChanged(sermonId);
             currentSermonId = sermonId;
         } else {
             // resume current sermon
@@ -325,8 +318,6 @@ public class SermonFragment extends Fragment implements MediaPlayerService.Media
                     break;
                 }
             }
-//            sermons.get(currentSermonId).setStatus(PlaybackStatus.PLAYING);
-//            sermonsAdapter.notifyItemChanged(sermonId);
         }
     }
 
@@ -341,8 +332,6 @@ public class SermonFragment extends Fragment implements MediaPlayerService.Media
                     break;
                 }
             }
-//            sermons.get(currentSermonId).setStatus(PlaybackStatus.STOPPED);
-//            sermonsAdapter.notifyItemChanged(currentSermonId);
             currentSermonId = null;
         }
     }
@@ -361,9 +350,10 @@ public class SermonFragment extends Fragment implements MediaPlayerService.Media
                     }
                 }
             }
-            sermonsAdapter.setSermons(sermons); // will call notify data set changed
             currentSermonId = id;
         }
+
+        sermonsAdapter.setSermons(sermons); // will call notify data set changed
         refreshLayout.setRefreshing(false);
     }
 

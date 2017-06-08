@@ -5,8 +5,6 @@ import android.os.Parcelable;
 
 import org.cbcwpa.android.cbcwlaapp.utils.PlaybackStatus;
 
-import java.io.Serializable;
-
 public class Sermon implements Parcelable{
 
     private String id;
@@ -18,7 +16,7 @@ public class Sermon implements Parcelable{
     private String audioPath;
     private PlaybackStatus status = PlaybackStatus.STOPPED;
 
-    public Sermon() {
+    Sermon() {
 
     }
 

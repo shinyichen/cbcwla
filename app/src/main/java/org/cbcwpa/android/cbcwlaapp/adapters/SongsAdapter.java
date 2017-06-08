@@ -24,7 +24,7 @@ public class SongsAdapter extends RecyclerView.Adapter<SongsAdapter.ViewHolder> 
         return new ViewHolder(view);
     }
 
-    private final ArrayList<Song> songs;
+    private ArrayList<Song> songs;
 
     private final SongViewListener clickListener;
 
@@ -33,6 +33,10 @@ public class SongsAdapter extends RecyclerView.Adapter<SongsAdapter.ViewHolder> 
         this.clickListener = listener;
     }
 
+    public void setSongs(ArrayList<Song> songs) {
+        this.songs = songs;
+        this.notifyDataSetChanged();
+    }
 
     @Override
     public void onBindViewHolder(final ViewHolder holder, int position) {
@@ -60,11 +64,11 @@ public class SongsAdapter extends RecyclerView.Adapter<SongsAdapter.ViewHolder> 
 
     public class ViewHolder extends RecyclerView.ViewHolder {
         public final View view;
-        public final TextView songTitleView;
-        public final TextView songDateView;
-        public final TextView songDescriptionView;
+        final TextView songTitleView;
+        final TextView songDateView;
+        final TextView songDescriptionView;
 
-        public ViewHolder(View view) {
+        ViewHolder(View view) {
             super(view);
             this.view = view;
             songTitleView = (TextView) view.findViewById(R.id.song_title_view);

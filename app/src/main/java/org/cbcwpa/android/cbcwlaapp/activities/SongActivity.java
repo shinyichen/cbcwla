@@ -10,8 +10,6 @@ import org.cbcwpa.android.cbcwlaapp.xml.Song;
 
 public class SongActivity extends AppCompatActivity {
 
-    private WebView webView;
-
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -24,7 +22,7 @@ public class SongActivity extends AppCompatActivity {
         setSupportActionBar(toolbar);
         getSupportActionBar().setDisplayHomeAsUpEnabled(true);
 
-        webView = (WebView) findViewById(R.id.song_web_view);
+        WebView webView = (WebView) findViewById(R.id.song_web_view);
         webView.loadData(song.getContent(), "text/html; charset=UTF-8", null);
     }
 }

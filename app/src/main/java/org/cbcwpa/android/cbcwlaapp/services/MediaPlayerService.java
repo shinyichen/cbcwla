@@ -687,9 +687,9 @@ public class MediaPlayerService extends Service implements
     }
 
     public interface MediaListener {
-        public void stopped();
-        public void paused();
-        public void playing(String sermonId);
+        void stopped();
+        void paused();
+        void playing(String sermonId);
     }
 
     public String getCurrentSermonId() {
