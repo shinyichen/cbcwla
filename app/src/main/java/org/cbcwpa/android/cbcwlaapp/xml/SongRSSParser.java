@@ -36,7 +36,6 @@ public class SongRSSParser extends AsyncTask<String, Integer, ArrayList<Song>> {
             for (int i = 0; i < items.getLength(); i++) {
                 Node item = items.item(i);
                 Song song = new Song();
-                song.setId(i);
                 NodeList children = item.getChildNodes();
                 for (int c = 0; c < children.getLength(); c++) {
                     Node child = children.item(c);
@@ -46,6 +45,7 @@ public class SongRSSParser extends AsyncTask<String, Integer, ArrayList<Song>> {
                             break;
                         case "link":
                             song.setLink(child.getLastChild().getTextContent().trim());
+                            song.setId(song.getLink()); // use link as ID
                             break;
                         case "pubDate":
                             String str = child.getLastChild().getTextContent().trim();

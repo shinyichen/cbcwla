@@ -423,7 +423,7 @@ public class MediaPlayerService extends Service implements
                 mediaPlayer.reset();
             }
 
-            sermon = (Sermon) intent.getParcelableExtra("sermon");
+            sermon = intent.getParcelableExtra("sermon");
 
             initMediaPlayer();
             buildNotification(PlaybackStatus.PLAYING);
@@ -689,14 +689,14 @@ public class MediaPlayerService extends Service implements
     public interface MediaListener {
         public void stopped();
         public void paused();
-        public void playing(int sermonId);
+        public void playing(String sermonId);
     }
 
-    public int getCurrentSermonId() {
+    public String getCurrentSermonId() {
         if (sermon != null)
             return sermon.getId();
         else
-            return -1;
+            return null;
     }
 
     public PlaybackStatus getStatus() {

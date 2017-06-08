@@ -19,7 +19,7 @@ import org.cbcwpa.android.cbcwlaapp.xml.SongRSSParser;
 
 import java.util.ArrayList;
 
-public class HomeActivity extends AppCompatActivity {
+public class HomeActivity extends AppCompatActivity implements SermonFragment.OnFragmentInteractionListener {
 
     public static final String TAG = "HomeActivity";
 
@@ -101,5 +101,15 @@ public class HomeActivity extends AppCompatActivity {
     protected void onDestroy() {
         // save data
         super.onDestroy();
+    }
+
+    @Override
+    public ArrayList<Sermon> refreshSermons() {
+        try {
+            sermons = new SermonRSSParser().execute(sermon_rss_path).get();
+        } catch (Exception e) {
+            sermons = new ArrayList<>();
+        }
+        return sermons;
     }
 }

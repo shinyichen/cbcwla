@@ -4,10 +4,10 @@ import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
 import android.content.ServiceConnection;
-import android.net.Uri;
 import android.os.Bundle;
 import android.os.IBinder;
 import android.support.v4.app.Fragment;
+import android.support.v4.widget.SwipeRefreshLayout;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
 import android.util.Log;
@@ -46,9 +46,11 @@ public class SermonFragment extends Fragment implements MediaPlayerService.Media
 
     private boolean serviceBound = false;
 
-    private int currentSermonId = -1;
+    private String currentSermonId = null;
 
     private Sermon playOnServiceConnect;
+
+    private SwipeRefreshLayout refreshLayout;
 
     public SermonFragment() {
         // Required empty public constructor
@@ -78,9 +80,9 @@ public class SermonFragment extends Fragment implements MediaPlayerService.Media
         }
         try {
             if (savedInstanceState != null) {
-                currentSermonId = savedInstanceState.getInt("CurrentSermonId", -1);
+                currentSermonId = savedInstanceState.getString("CurrentSermonId", null);
             } else {
-                currentSermonId = -1;
+                currentSermonId = null;
             }
         } catch (Exception e) {
             Log.e(TAG, "Error reading RSS feed");
@@ -95,6 +97,18 @@ public class SermonFragment extends Fragment implements MediaPlayerService.Media
 
         ViewGroup rootView = (ViewGroup) inflater
                 .inflate(R.layout.fragment_sermon, container, false);
+
+        refreshLayout = (SwipeRefreshLayout) rootView.findViewById(R.id.sermons_refresh_layout);
+        refreshLayout.setOnRefreshListener(
+                new SwipeRefreshLayout.OnRefreshListener() {
+                    @Override
+                    public void onRefresh() {
+
+                        refresh();
+                    }
+                }
+        );
+
 
         // main list view
         sermonsListView = (RecyclerView) rootView.findViewById(R.id.sermon_activity_list);
@@ -120,7 +134,7 @@ public class SermonFragment extends Fragment implements MediaPlayerService.Media
 
     @Override
     public void onSaveInstanceState(Bundle savedInstanceState) {
-      savedInstanceState.putInt("CurrentSermonId", currentSermonId);
+      savedInstanceState.putString("CurrentSermonId", currentSermonId);
 //        savedInstanceState.putParcelableArrayList("Sermons", sermons);
         super.onSaveInstanceState(savedInstanceState);
     }
@@ -148,6 +162,7 @@ public class SermonFragment extends Fragment implements MediaPlayerService.Media
         Log.i(TAG, "destroyed");
     }
 
+
     /**
      * This interface must be implemented by activities that contain this
      * fragment to allow an interaction in this fragment to be communicated
@@ -159,8 +174,7 @@ public class SermonFragment extends Fragment implements MediaPlayerService.Media
      * >Communicating with Other Fragments</a> for more information.
      */
     public interface OnFragmentInteractionListener {
-        // TODO: Update argument type and name
-        void onFragmentInteraction(Uri uri);
+        ArrayList<Sermon> refreshSermons();
     }
 
     // bind to MediaServicePlayer
@@ -174,11 +188,14 @@ public class SermonFragment extends Fragment implements MediaPlayerService.Media
             mediaPlayerService.registerClient(SermonFragment.this);
 
             // if service already existed, get current play status
-            int id = mediaPlayerService.getCurrentSermonId();
-            for (Sermon s : sermons) {
-                if (s.getId() == id) {
-                    s.setStatus(mediaPlayerService.getStatus());
-                    Log.i(TAG, "Sermon " + id + " is " + mediaPlayerService.getStatus());
+            String id = mediaPlayerService.getCurrentSermonId();
+            if (id != null) {
+                for (Sermon s : sermons) {
+                    if (s.getId().equals(id)) {
+                        s.setStatus(mediaPlayerService.getStatus());
+                        Log.i(TAG, "Sermon " + id + " is " + mediaPlayerService.getStatus());
+                        break;
+                    }
                 }
             }
 
@@ -234,7 +251,7 @@ public class SermonFragment extends Fragment implements MediaPlayerService.Media
         @Override
         public void onItemClicked(Sermon sermon, SermonsAdapter.ViewHolder holder) {
 
-            if (currentSermonId != -1 && sermon.getId() == currentSermonId) {
+            if (currentSermonId != null && sermon.getId().equals(currentSermonId)) {
                 // clicked on the current sermon, flip play status
                 if (mediaPlayerService.getStatus() == PlaybackStatus.PLAYING)
                     pauseAudio();
@@ -251,37 +268,103 @@ public class SermonFragment extends Fragment implements MediaPlayerService.Media
 
     @Override
     public void paused() {
-        if (currentSermonId != -1) {
-            sermons.get(currentSermonId).setStatus(PlaybackStatus.PAUSED);
-            sermonsAdapter.notifyItemChanged(currentSermonId);
+        if (currentSermonId != null) {
+            for (int i = 0; i < sermons.size(); i++) {
+                Sermon s = sermons.get(i);
+                if (s.getId().equals(currentSermonId)) {
+                    s.setStatus(PlaybackStatus.PAUSED);
+                    sermonsAdapter.notifyItemChanged(i);
+                    break;
+                }
+            }
         }
     }
 
     @Override
-    public void playing(int sermonId) {
-        if (currentSermonId == -1) {
-            sermons.get(sermonId).setStatus(PlaybackStatus.PLAYING);
-            sermonsAdapter.notifyItemChanged(sermonId);
+    public void playing(String sermonId) {
+        if (currentSermonId == null) {
+            for (int i = 0; i < sermons.size(); i++) {
+                Sermon s = sermons.get(i);
+                if (s.getId().equals(sermonId)) {
+                    s.setStatus(PlaybackStatus.PLAYING);
+                    sermonsAdapter.notifyItemChanged(i);
+                    break;
+                }
+            }
+//            sermons.get(sermonId).setStatus(PlaybackStatus.PLAYING);
+//            sermonsAdapter.notifyItemChanged(sermonId);
             currentSermonId = sermonId;
         } else if (currentSermonId != sermonId) { // stop current, play new
-            sermons.get(currentSermonId).setStatus(PlaybackStatus.STOPPED);
-            sermonsAdapter.notifyItemChanged(currentSermonId);
-            sermons.get(sermonId).setStatus(PlaybackStatus.PLAYING);
-            sermonsAdapter.notifyItemChanged(sermonId);
+            for (int i = 0; i < sermons.size(); i++) {
+                Sermon s = sermons.get(i);
+                int count = 0;
+                if (s.getId().equals(currentSermonId)) {
+                    s.setStatus(PlaybackStatus.STOPPED);
+                    sermonsAdapter.notifyItemChanged(i);
+                    count ++;
+                } else if (s.getId().equals(sermonId)) {
+                    s.setStatus(PlaybackStatus.PLAYING);
+                    sermonsAdapter.notifyItemChanged(i);
+                    count ++;
+                }
+                if (count == 2)
+                    break;
+            }
+//            sermons.get(currentSermonId).setStatus(PlaybackStatus.STOPPED);
+//            sermonsAdapter.notifyItemChanged(currentSermonId);
+//            sermons.get(sermonId).setStatus(PlaybackStatus.PLAYING);
+//            sermonsAdapter.notifyItemChanged(sermonId);
             currentSermonId = sermonId;
         } else {
             // resume current sermon
-            sermons.get(currentSermonId).setStatus(PlaybackStatus.PLAYING);
-            sermonsAdapter.notifyItemChanged(sermonId);
+            for (int i = 0; i < sermons.size(); i++) {
+                Sermon s = sermons.get(i);
+                if (s.getId().equals(currentSermonId)) {
+                    s.setStatus(PlaybackStatus.PLAYING);
+                    sermonsAdapter.notifyItemChanged(i);
+                    break;
+                }
+            }
+//            sermons.get(currentSermonId).setStatus(PlaybackStatus.PLAYING);
+//            sermonsAdapter.notifyItemChanged(sermonId);
         }
     }
 
     @Override
     public void stopped() {
-        if (currentSermonId != -1) {
-            sermons.get(currentSermonId).setStatus(PlaybackStatus.STOPPED);
-            sermonsAdapter.notifyItemChanged(currentSermonId);
-            currentSermonId = -1;
+        if (currentSermonId != null) {
+            for (int i = 0; i < sermons.size(); i++) {
+                Sermon s = sermons.get(i);
+                if (s.getId().equals(currentSermonId)) {
+                    s.setStatus(PlaybackStatus.STOPPED);
+                    sermonsAdapter.notifyItemChanged(i);
+                    break;
+                }
+            }
+//            sermons.get(currentSermonId).setStatus(PlaybackStatus.STOPPED);
+//            sermonsAdapter.notifyItemChanged(currentSermonId);
+            currentSermonId = null;
         }
     }
+
+    private void refresh() {
+        sermons = ((OnFragmentInteractionListener)getActivity()).refreshSermons();
+        // play/pause status is reset
+        if (mediaPlayerService != null) {
+            String id = mediaPlayerService.getCurrentSermonId();
+            if (id != null) {
+                for (Sermon s : sermons) {
+                    if (s.getId().equals(id)) {
+                        s.setStatus(mediaPlayerService.getStatus());
+                        Log.i(TAG, "Sermon " + id + " is " + mediaPlayerService.getStatus());
+                        break;
+                    }
+                }
+            }
+            sermonsAdapter.setSermons(sermons); // will call notify data set changed
+            currentSermonId = id;
+        }
+        refreshLayout.setRefreshing(false);
+    }
+
 }

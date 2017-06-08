@@ -9,7 +9,7 @@ import java.io.Serializable;
 
 public class Sermon implements Parcelable{
 
-    private int id;
+    private String id;
     private String title;
     private String link;
     private String pubDate;
@@ -23,7 +23,7 @@ public class Sermon implements Parcelable{
     }
 
     private Sermon(Parcel p) {
-        this.id = p.readInt();
+        this.id = p.readString();
         this.title = p.readString();
         this.link = p.readString();
         this.pubDate = p.readString();
@@ -32,11 +32,11 @@ public class Sermon implements Parcelable{
         this.audioPath = p.readString();
         this.status = PlaybackStatus.valueOf(p.readString());
     }
-    public void setId(int id) {
+    public void setId(String id) {
         this.id = id;
     }
 
-    public int getId() {
+    public String getId() {
         return id;
     }
 
@@ -103,7 +103,7 @@ public class Sermon implements Parcelable{
 
     @Override
     public void writeToParcel(Parcel dest, int flags) {
-        dest.writeInt(id);
+        dest.writeString(id);
         dest.writeString(title);
         dest.writeString(link);
         dest.writeString(pubDate);

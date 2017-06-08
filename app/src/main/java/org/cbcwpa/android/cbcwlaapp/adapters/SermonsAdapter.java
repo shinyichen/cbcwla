@@ -76,6 +76,11 @@ public class SermonsAdapter extends RecyclerView.Adapter<SermonsAdapter.ViewHold
         this.clickListener = listener;
     }
 
+    public void setSermons(ArrayList<Sermon> sermons) {
+        this.sermons = sermons;
+        this.notifyDataSetChanged();
+    }
+
 
     @Override
     public ViewHolder onCreateViewHolder(ViewGroup parent, int viewType) {
