@@ -291,7 +291,7 @@ public class SermonFragment extends Fragment implements MediaPlayerService.Media
                 }
             }
             currentSermonId = sermonId;
-        } else if (currentSermonId.equals(sermonId)) { // stop current, play new
+        } else if (!currentSermonId.equals(sermonId)) { // stop current, play new
             for (int i = 0; i < sermons.size(); i++) {
                 Sermon s = sermons.get(i);
                 int count = 0;
